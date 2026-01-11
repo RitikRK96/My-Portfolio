@@ -1,0 +1,34 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper function to check if user is authentication (Admin)
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // Projects: Public Read, Admin Write
+    match /projects/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Blogs: Public Read, Admin Write
+    match /blogs/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Photos: Public Read, Admin Write
+    match /photos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Match all other files
+    match /{allPaths=**} {
+       allow read: if true;
+       allow write: if isAdmin();
+    }
+  }
+}
