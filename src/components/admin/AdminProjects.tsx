@@ -1,25 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { db, storage } from '../../firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import React, { useState } from 'react';
+import { useProjects, type Project } from '../../context/ProjectContext';
 import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
-import toast from 'react-hot-toast';
 import ConfirmModal from '../ConfirmModal';
-import clsx from 'clsx';
-
-interface Project {
-    id: string;
-    title: string;
-    description: string;
-    techStack: string[];
-    liveUrl: string;
-    githubUrl: string;
-    imageUrl: string;
-}
 
 const AdminProjects = () => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { projects, loading, addProject, updateProject, deleteProject } = useProjects();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -35,21 +20,6 @@ const AdminProjects = () => {
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
 
-    useEffect(() => {
-        fetchProjects();
-    }, []);
-
-    const fetchProjects = async () => {
-        try {
-            const querySnapshot = await getDocs(collection(db, 'projects'));
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-            setProjects(list);
-        } catch (error) {
-            toast.error('Error fetching projects');
-        } finally {
-            setLoading(false);
-        }
-    };
 
     const resetForm = () => {
         setFormData({ title: '', description: '', techStack: '', liveUrl: '', githubUrl: '' });
@@ -75,41 +45,26 @@ const AdminProjects = () => {
         setUploading(true);
 
         try {
-            let imageUrl = currentProject?.imageUrl || '';
-
-            if (imageFile) {
-                const uniqueName = `projects/${Date.now()}_${imageFile.name}`;
-                const storageRef = ref(storage, uniqueName);
-                await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(storageRef);
-            }
-
             const projectData = {
                 title: formData.title,
                 description: formData.description,
                 techStack: formData.techStack.split(',').map(s => s.trim()).filter(s => s),
                 liveUrl: formData.liveUrl,
                 githubUrl: formData.githubUrl,
-                imageUrl,
-                updatedAt: serverTimestamp(),
+                // imageUrl handled in context if file is passed
             };
 
             if (currentProject) {
-                await updateDoc(doc(db, 'projects', currentProject.id), projectData);
-                toast.success('Project updated successfully');
+                // If editing, we pass the file only if it's new
+                // imageUrl from string is handled if no new file
+                await updateProject(currentProject.id, { ...projectData, imageUrl: currentProject.imageUrl }, imageFile || undefined);
             } else {
-                await addDoc(collection(db, 'projects'), {
-                    ...projectData,
-                    createdAt: serverTimestamp(),
-                });
-                toast.success('Project created successfully');
+                await addProject(projectData as any, imageFile || undefined);
             }
 
-            fetchProjects();
             resetForm();
         } catch (error) {
             console.error(error);
-            toast.error('Error saving project');
         } finally {
             setUploading(false);
         }
@@ -118,12 +73,8 @@ const AdminProjects = () => {
     const handleDelete = async () => {
         if (!deleteId) return;
         try {
-            await deleteDoc(doc(db, 'projects', deleteId));
-            // Optional: Delete image from storage if needed
-            toast.success('Project deleted');
-            fetchProjects();
+            await deleteProject(deleteId);
         } catch (error) {
-            toast.error('Error deleting project');
         } finally {
             setDeleteId(null);
         }

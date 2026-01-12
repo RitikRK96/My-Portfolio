@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import { Filter } from 'lucide-react';
 import clsx from 'clsx';
-import { format } from 'date-fns';
 
 interface Photo {
     id: string;

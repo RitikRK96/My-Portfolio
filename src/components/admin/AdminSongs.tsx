@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { Plus, Trash2, Music } from 'lucide-react';
+import { Trash2, Music } from 'lucide-react';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../ConfirmModal';
 
@@ -14,7 +14,7 @@ interface Song {
 
 const AdminSongs = () => {
     const [songs, setSongs] = useState<Song[]>([]);
-    const [loading, setLoading] = useState(true);
+    // const [loading, setLoading] = useState(true);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({ title: '', url: '', type: 'song' });
@@ -32,7 +32,7 @@ const AdminSongs = () => {
         } catch (error) {
             toast.error('Error fetching songs');
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 

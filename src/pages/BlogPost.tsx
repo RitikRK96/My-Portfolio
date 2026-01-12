@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -38,9 +38,9 @@ const BlogPost = () => {
                 <ArrowLeft size={20} className="mr-2" /> Back to Blogs
             </Link>
 
-            {blog.imageUrl && (
+            {blog.coverImage && (
                 <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden mb-8 shadow-2xl">
-                    <img src={blog.imageUrl} alt={blog.title} className="w-full h-full object-cover" />
+                    <img src={blog.coverImage} alt={blog.title} className="w-full h-full object-cover" />
                 </div>
             )}
 

@@ -1,37 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
-import { format } from 'date-fns';
+import { useBlogs } from '../context/BlogContext';
 import { ArrowRight } from 'lucide-react';
-
-interface Blog {
-    id: string;
-    title: string;
-    content: string;
-    imageUrl: string;
-    createdAt: any;
-}
+import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const Blogs = () => {
-    const [blogs, setBlogs] = useState<Blog[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchBlogs = async () => {
-            try {
-                const q = query(collection(db, 'blogs'), orderBy('createdAt', 'desc'));
-                const querySnapshot = await getDocs(q);
-                const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Blog));
-                setBlogs(list);
-            } catch (error) {
-                console.error('Error fetching blogs');
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchBlogs();
-    }, []);
+    const { blogs, loading } = useBlogs();
 
     if (loading) return <div className="text-center pt-20 animate-pulse text-blue-300">Loading thoughts...</div>;
 
@@ -54,8 +27,8 @@ const Blogs = () => {
                         data-aos-delay={index * 100}
                     >
                         <div className="h-48 overflow-hidden bg-gray-800">
-                            {blog.imageUrl ? (
-                                <img src={blog.imageUrl} alt={blog.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                            {blog.coverImage ? (
+                                <img src={blog.coverImage} alt={blog.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-600">No Cover Image</div>
                             )}

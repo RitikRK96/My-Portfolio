@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { Mail, Send, MapPin, Phone } from 'lucide-react';
+import { Mail, Send, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Contact = () => {

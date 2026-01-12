@@ -1,41 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { useProjects } from '../context/ProjectContext';
 import { Github, ExternalLink, Calendar, Code2 } from 'lucide-react';
-import clsx from 'clsx';
 import { format } from 'date-fns';
 
-interface Project {
-    id: string;
-    title: string;
-    description: string;
-    techStack: string[];
-    liveUrl: string;
-    githubUrl: string;
-    imageUrl: string;
-    createdAt?: any;
-}
-
 const Projects = () => {
-    const [projects, setProjects] = useState<Project[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { projects, loading } = useProjects();
 
-    useEffect(() => {
-        const fetchProjects = async () => {
-            try {
-                const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-                const querySnapshot = await getDocs(q);
-                const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-                setProjects(list);
-            } catch (error) {
-                console.error('Error fetching projects', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProjects();
-    }, []);
 
     if (loading) return <div className="text-center pt-40 text-blue-300 animate-pulse">Loading amazing things...</div>;
 

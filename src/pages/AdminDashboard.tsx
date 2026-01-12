@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LayoutDashboard, FolderKanban, PenTool, Image, Music, Mail } from 'lucide-react';
 import clsx from 'clsx';
 

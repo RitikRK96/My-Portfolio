@@ -1,6 +1,12 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './context/AuthContext';
+import { ProjectProvider } from './context/ProjectContext';
+import { BlogProvider } from './context/BlogContext';
+import { PhotoProvider } from './context/PhotoContext';
+import { SongProvider } from './context/SongContext';
+import { ContactProvider } from './context/ContactContext';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
@@ -36,33 +42,45 @@ const App = () => {
   }, []);
 
   return (
-    <div className="min-h-screen font-sans text-gray-100 selection:bg-blue-500 selection:text-white pb-20">
-      <Navbar />
-      <div className="pt-20 px-4 max-w-7xl mx-auto">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/projects" element={<Projects />} />
-          <Route path="/blogs" element={<Blogs />} />
-          <Route path="/blogs/:id" element={<BlogPost />} />
-          <Route path="/photos" element={<Photos />} />
-          <Route path="/songs" element={<Songs />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login />} />
+    <AuthProvider>
+      <ProjectProvider>
+        <BlogProvider>
+          <PhotoProvider>
+            <SongProvider>
+              <ContactProvider>
+                <div className="min-h-screen font-sans text-gray-100 selection:bg-blue-500 selection:text-white pb-20">
+                  <Navbar />
+                  <div className="pt-8 px-4 max-w-7xl mx-auto">
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/projects" element={<Projects />} />
+                      <Route path="/blogs" element={<Blogs />} />
+                      <Route path="/blogs/:id" element={<BlogPost />} />
+                      <Route path="/photos" element={<Photos />} />
+                      <Route path="/songs" element={<Songs />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/login" element={<Login />} />
 
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </div>
-      <Toaster position="bottom-right" toastOptions={{
-        className: 'glass !bg-gray-900 !text-white !border !border-white/10',
-      }} />
-    </div>
+                      <Route
+                        path="/admin"
+                        element={
+                          <ProtectedRoute>
+                            <AdminDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                    </Routes>
+                  </div>
+                  <Toaster position="bottom-right" toastOptions={{
+                    className: 'glass !bg-gray-900 !text-white !border !border-white/10',
+                  }} />
+                </div>
+              </ContactProvider>
+            </SongProvider>
+          </PhotoProvider>
+        </BlogProvider>
+      </ProjectProvider>
+    </AuthProvider>
   );
 };
 

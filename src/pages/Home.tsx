@@ -1,5 +1,3 @@
-import React from 'react';
-import { Github, Linkedin, Mail, Twitter, ChevronDown, Download, ExternalLink, Code2, Database, Layout } from 'lucide-react';
 
 const Home = () => {
     return (
@@ -9,7 +7,7 @@ const Home = () => {
             <div className="grid-bg"></div>
 
             {/* Hero Section */}
-            <section className="min-h-screen flex items-center justify-center pt-20 px-6 relative overflow-hidden">
+            <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
                 <div className="container mx-auto z-10">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                         <div className="flex-1 text-center md:text-left" data-aos="fade-right">
@@ -88,7 +86,7 @@ const Home = () => {
                                         <h4 className="font-bold text-white text-lg">B.E. Computer Science</h4>
                                         <p className="text-gray-400">Chandigarh University</p>
                                     </div>
-                                    <span className="text-neon-purple font-bold orbitron">CGPA: 7.8</span>
+                                    <span className="text-neon-purple font-bold orbitron">CGPA: 7.79</span>
                                 </div>
                                 <div className="h-px bg-white/10"></div>
                                 <div>

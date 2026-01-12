@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../firebase';
-import { collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Music, PlayCircle } from 'lucide-react';
 
 interface Song {
@@ -13,7 +13,7 @@ interface Song {
 const Songs = () => {
     const [songs, setSongs] = useState<Song[]>([]);
     const [playlists, setPlaylists] = useState<Song[]>([]);
-    const [loading, setLoading] = useState(true);
+    // const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchSongs = async () => {
@@ -27,7 +27,7 @@ const Songs = () => {
             } catch (error) {
                 console.error('Error fetching songs');
             } finally {
-                setLoading(false);
+                // setLoading(false);
             }
         };
         fetchSongs();
@@ -70,7 +70,7 @@ const Songs = () => {
                         <Music className="text-blue-400" /> Current Jam
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {songs.map((song, index) => (
+                        {songs.map((song) => (
                             <div key={song.id} className="glass-card p-4 rounded-xl flex items-center gap-4 hover:bg-white/10 transition-colors">
                                 <div className="p-3 bg-white/5 rounded-full text-blue-400 shrink-0">
                                     <Music size={24} />

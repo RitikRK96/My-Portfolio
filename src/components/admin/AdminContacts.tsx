@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
-import { Mail, Calendar } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ContactMsg {

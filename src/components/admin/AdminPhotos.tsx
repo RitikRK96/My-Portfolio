@@ -20,7 +20,7 @@ const DEFAULT_CATEGORIES = ['Moon', 'Sunsets', 'Random'];
 const AdminPhotos = () => {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
-    const [loading, setLoading] = useState(true);
+    // const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -50,7 +50,7 @@ const AdminPhotos = () => {
         } catch (error) {
             toast.error('Error fetching photos');
         } finally {
-            setLoading(false);
+            // setLoading(false);
         }
     };
 
