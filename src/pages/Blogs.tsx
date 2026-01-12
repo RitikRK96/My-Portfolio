@@ -11,7 +11,7 @@ const Blogs = () => {
     return (
         <div className="pb-20">
             <div className="text-center mb-16" data-aos="fade-down">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 mb-4 inline-block">
+                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 mb-4 inline-block pb-2">
                     Blog & Articles
                 </h1>
                 <p className="text-gray-400">Thoughts, tutorials, and insights on development.</p>

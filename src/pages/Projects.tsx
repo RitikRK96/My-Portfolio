@@ -6,12 +6,12 @@ const Projects = () => {
     const { projects, loading } = useProjects();
 
 
-    if (loading) return <div className="text-center pt-40 text-blue-300 animate-pulse">Loading amazing things...</div>;
+    if (loading) return <div className="text-center pt-40 text-blue-300 animate-pulse">Loading amazing projects...</div>;
 
     return (
         <div className="pb-20">
             <div className="text-center mb-16" data-aos="fade-down">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4 inline-block">
+                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4 inline-block pb-2">
                     Featured Projects
                 </h1>
                 <p className="text-gray-400 max-w-2xl mx-auto">

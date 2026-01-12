@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, deleteDoc, doc, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase';
+
 import { useAuth } from './AuthContext';
 
 export interface ContactMessage {
@@ -26,32 +26,62 @@ export const ContactProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
 
-    useEffect(() => {
-        let unsubscribe = () => { };
+    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
+        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
+    const API_URL = `${API_BASE}/contacts`;
 
+    const fetchContacts = async () => {
+        setLoading(true);
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const headers: HeadersInit = token
+                ? { 'Authorization': `Bearer ${token}` }
+                : {};
+
+            const response = await fetch(API_URL, { headers });
+
+            if (response.status === 403) {
+                // Guest/Unauthenticated users might get 403 if they try to view contacts
+                console.warn("Not authorized to view contacts");
+                setContacts([]);
+                return;
+            }
+
+            if (!response.ok) throw new Error('Failed to fetch contacts');
+            const data = await response.json();
+            setContacts(data);
+        } catch (error) {
+            console.error('Error fetching contacts', error);
+            // toast.error('Failed to load contacts'); // Optional: mute error if it happens on load
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         if (user) {
-            setLoading(true);
-            const q = query(collection(db, 'contacts'), orderBy('createdAt', 'desc'));
-            unsubscribe = onSnapshot(q, (snapshot) => {
-                const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ContactMessage));
-                setContacts(list);
-                setLoading(false);
-            }, (error) => {
-                console.error('Error fetching contacts', error);
-                setLoading(false);
-            });
+            fetchContacts();
         } else {
             setContacts([]);
             setLoading(false);
         }
-
-        return () => unsubscribe();
     }, [user]);
 
     const deleteContact = async (id: string) => {
         try {
-            await deleteDoc(doc(db, 'contacts', id));
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete contact');
+
             toast.success('Message deleted');
+            fetchContacts(); // Refresh list
         } catch (error) {
             console.error('Error deleting contact', error);
             toast.error('Failed to delete message');

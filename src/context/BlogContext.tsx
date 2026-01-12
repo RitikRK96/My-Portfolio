@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase';
 import { useUpload } from './UploadContext';
 
 export interface Blog {
@@ -33,8 +34,14 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // If running strictly local, might need full URL.
     // Let's assume '/blogs' works via proxy or define a constant.
 
-    // NOTE: Replace with actual Function URL if not using Hosting rewrites locally.
-    const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/my-portfolio-f8863/asia-south1/api/blogs';
+    // NOTE: VITE_API_URL should be the base API URL (e.g. .../api)
+    // Local: http://127.0.0.1:5001/my-portfolio-f8863/asia-south1/api
+    // Prod: https://api-dp2f6yjbbq-el.a.run.app
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isLocal
+        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
+        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
+    const API_URL = `${API_BASE}/blogs`;
 
     const fetchBlogs = async () => {
         setLoading(true);
@@ -63,11 +70,12 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 coverImage = await uploadFile(imageFile, 'blogs'); // Use UploadContext
             }
 
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 'Authorization': `Bearer ${token}` // If auth needed
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ ...data, coverImage }),
             });
@@ -90,10 +98,12 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 coverImage = await uploadFile(imageFile, 'blogs');
             }
 
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({ ...data, ...(coverImage && { coverImage }) }),
             });
@@ -111,8 +121,12 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const deleteBlog = async (id: string) => {
         try {
+            const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
 
             if (!response.ok) throw new Error('Failed to delete blog');

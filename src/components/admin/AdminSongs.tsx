@@ -1,40 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { Trash2, Music } from 'lucide-react';
-import toast from 'react-hot-toast';
+import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useSongs } from '../../context/SongContext';
+import { Trash2, Music, X, Plus } from 'lucide-react';
+
 import ConfirmModal from '../ConfirmModal';
 
-interface Song {
-    id: string;
-    title: string;
-    url: string;
-    type: 'song' | 'playlist';
-}
-
 const AdminSongs = () => {
-    const [songs, setSongs] = useState<Song[]>([]);
-    // const [loading, setLoading] = useState(true);
+    const { songs, addSong, deleteSong } = useSongs();
     const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const [formData, setFormData] = useState({ title: '', url: '', type: 'song' });
-
-    useEffect(() => {
-        fetchSongs();
-    }, []);
-
-    const fetchSongs = async () => {
-        try {
-            const q = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Song));
-            setSongs(list);
-        } catch (error) {
-            toast.error('Error fetching songs');
-        } finally {
-            // setLoading(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,29 +28,21 @@ const AdminSongs = () => {
                 embedUrl = formData.url.replace('open.spotify.com', 'open.spotify.com/embed');
             }
 
-            await addDoc(collection(db, 'songs'), {
-                title: formData.title || 'Untitled',
-                url: embedUrl,
-                type: formData.type,
-                createdAt: serverTimestamp(),
-            });
+            await addSong(formData.title || 'Untitled', embedUrl, formData.type as 'song' | 'playlist');
 
-            toast.success('Added successfully');
             setFormData({ title: '', url: '', type: 'song' });
-            fetchSongs();
+            setIsModalOpen(false);
         } catch (error) {
-            toast.error('Error adding song');
+            // Error handled in context
         }
     };
 
     const handleDelete = async () => {
         if (!deleteId) return;
         try {
-            await deleteDoc(doc(db, 'songs', deleteId));
-            toast.success('Deleted successfully');
-            fetchSongs();
+            await deleteSong(deleteId);
         } catch (error) {
-            toast.error('Deletion failed');
+            // Error handled in context
         } finally {
             setDeleteId(null);
         }
@@ -82,45 +50,14 @@ const AdminSongs = () => {
 
     return (
         <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Manage Songs & Playlists</h2>
-
-            <div className="bg-white/5 p-6 rounded-xl mb-8 border border-white/10">
-                <h3 className="text-lg font-bold text-white mb-4">Add New</h3>
-                <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
-                    <div className="flex-1 w-full">
-                        <label className="block text-gray-400 text-sm mb-1">Title</label>
-                        <input
-                            value={formData.title}
-                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none"
-                            placeholder="My Fav Jam"
-                        />
-                    </div>
-                    <div className="flex-1 w-full">
-                        <label className="block text-gray-400 text-sm mb-1">Link (YouTube/Spotify)</label>
-                        <input
-                            required
-                            value={formData.url}
-                            onChange={e => setFormData({ ...formData, url: e.target.value })}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none"
-                            placeholder="https://..."
-                        />
-                    </div>
-                    <div className="w-full md:w-32">
-                        <label className="block text-gray-400 text-sm mb-1">Type</label>
-                        <select
-                            value={formData.type}
-                            onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                            className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-white outline-none"
-                        >
-                            <option value="song">Song</option>
-                            <option value="playlist">Playlist</option>
-                        </select>
-                    </div>
-                    <button type="submit" className="w-full md:w-auto px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold">
-                        Add
-                    </button>
-                </form>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-white">Manage Songs & Playlists</h2>
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                    <Plus size={20} /> Add New
+                </button>
             </div>
 
             <div className="space-y-4">
@@ -143,6 +80,63 @@ const AdminSongs = () => {
                 ))}
                 {songs.length === 0 && <div className="text-gray-500 text-center">No songs yet.</div>}
             </div>
+
+            {/* Full Screen Modal */}
+            {isModalOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="glass-card w-full max-w-lg p-8 rounded-xl relative shadow-2xl border border-white/10">
+                        <button
+                            onClick={() => setIsModalOpen(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+
+                        <h3 className="text-2xl font-bold text-white mb-6 text-center">Add New Track</h3>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Title</label>
+                                <input
+                                    value={formData.title}
+                                    onChange={e => setFormData({ ...formData, title: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                    placeholder="My Fav Jam"
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Link (YouTube/Spotify)</label>
+                                <input
+                                    required
+                                    value={formData.url}
+                                    onChange={e => setFormData({ ...formData, url: e.target.value })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                    placeholder="https://..."
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Type</label>
+                                <select
+                                    value={formData.type}
+                                    onChange={e => setFormData({ ...formData, type: e.target.value as any })}
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                >
+                                    <option value="song" className="bg-gray-900">Song</option>
+                                    <option value="playlist" className="bg-gray-900">Playlist</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:scale-[1.02]">
+                                Add to Library
+                            </button>
+                        </form>
+                    </div>
+                </div>,
+                document.body
+            )}
 
             <ConfirmModal
                 isOpen={!!deleteId}

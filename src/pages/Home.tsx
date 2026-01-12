@@ -2,23 +2,19 @@
 const Home = () => {
     return (
         <div>
-            {/* Background Elements */}
-            <div className="cyber-bg"></div>
-            <div className="grid-bg"></div>
-
             {/* Hero Section */}
-            <section className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+            <section className="flex items-center justify-center px-6 relative overflow-hidden">
                 <div className="container mx-auto z-10">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-12">
                         <div className="flex-1 text-center md:text-left" data-aos="fade-right">
                             <div className="mb-4">
                                 <span className="text-neon-blue text-lg orbitron tracking-widest">// Full-Stack Developer</span>
                             </div>
-                            <h1 className="text-6xl md:text-8xl font-black mb-6 orbitron glitch leading-tight">
+                            <h1 className="text-6xl md:text-8xl font-black mb-4 orbitron glitch leading-tight">
                                 <span className="neon-text block">RITIK</span>
                                 <span className="neon-text-purple block">KUMAR</span>
                             </h1>
-                            <p className="text-xl md:text-2xl text-gray-300 mb-8 leading-relaxed max-w-2xl">
+                            <p className="text-xl md:text-2xl text-gray-300 mb-4 leading-relaxed max-w-2xl">
                                 Crafting <span className="text-neon-blue">seamless digital experiences</span> with React.js, Node.js, and modern web technologies. Building the future, one line of code at a time.
                             </p>
 

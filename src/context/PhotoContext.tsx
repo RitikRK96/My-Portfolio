@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db, storage } from '../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase';
+import { useUpload } from './UploadContext';
 
 export interface Photo {
     id: string;
@@ -26,14 +25,21 @@ const PhotoContext = createContext<PhotoContextType | undefined>(undefined);
 export const PhotoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [photos, setPhotos] = useState<Photo[]>([]);
     const [loading, setLoading] = useState(true);
+    const { uploadFile } = useUpload();
+
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isLocal
+        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
+        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
+    const API_URL = `${API_BASE}/photos`;
 
     const fetchPhotos = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'photos'), orderBy('date', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Photo));
-            setPhotos(list);
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Failed to fetch photos');
+            const data = await response.json();
+            setPhotos(data);
         } catch (error) {
             console.error('Error fetching photos', error);
             toast.error('Failed to load photos');
@@ -48,16 +54,20 @@ export const PhotoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const addPhoto = async (data: Omit<Photo, 'id' | 'createdAt' | 'imageUrl'>, imageFile: File) => {
         try {
-            const uniqueName = `photos/${Date.now()}_${imageFile.name}`;
-            const storageRef = ref(storage, uniqueName);
-            await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(storageRef);
+            const imageUrl = await uploadFile(imageFile, 'photos');
 
-            await addDoc(collection(db, 'photos'), {
-                ...data,
-                imageUrl,
-                createdAt: serverTimestamp(),
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...data, imageUrl }),
             });
+
+            if (!response.ok) throw new Error('Failed to add photo');
+
             toast.success('Photo added successfully');
             fetchPhotos();
         } catch (error) {
@@ -69,7 +79,16 @@ export const PhotoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const deletePhoto = async (id: string) => {
         try {
-            await deleteDoc(doc(db, 'photos', id));
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete photo');
+
             toast.success('Photo deleted successfully');
             fetchPhotos();
         } catch (error) {

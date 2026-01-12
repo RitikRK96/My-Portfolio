@@ -18,10 +18,12 @@ router.get('/', async (req, res) => {
 // Admin: Add Song
 router.post('/', validateFirebaseIdToken, async (req, res) => {
     try {
-        const { title, embedUrl, type } = req.body;
+        console.log('Songs POST headers:', req.headers);
+        console.log('Songs POST body:', req.body);
+        const { title, url, type } = req.body;
         const newSong = {
             title,
-            url: embedUrl, // Frontend uses 'url', schema said 'embedUrl', mapping here or usage needs consistency.
+            url, // Frontend sends 'url'
             type: type || 'song',
             createdAt: admin.firestore.FieldValue.serverTimestamp()
         };

@@ -1,7 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db } from '../firebase';
-import { collection, getDocs, addDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase';
 
 export interface Song {
     id: string;
@@ -25,13 +24,19 @@ export const SongProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [songs, setSongs] = useState<Song[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isLocal
+        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
+        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
+    const API_URL = `${API_BASE}/songs`;
+
     const fetchSongs = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'songs'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Song));
-            setSongs(list);
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Failed to fetch songs');
+            const data = await response.json();
+            setSongs(data);
         } catch (error) {
             console.error('Error fetching songs', error);
             toast.error('Failed to load songs');
@@ -46,12 +51,18 @@ export const SongProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const addSong = async (title: string, url: string, type: 'song' | 'playlist') => {
         try {
-            await addDoc(collection(db, 'songs'), {
-                title,
-                url,
-                type,
-                createdAt: serverTimestamp(),
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title, url, type }),
             });
+
+            if (!response.ok) throw new Error('Failed to add song');
+
             toast.success('Song added successfully');
             fetchSongs();
         } catch (error) {
@@ -63,7 +74,16 @@ export const SongProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const deleteSong = async (id: string) => {
         try {
-            await deleteDoc(doc(db, 'songs', id));
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete song');
+
             toast.success('Song deleted successfully');
             fetchSongs();
         } catch (error) {

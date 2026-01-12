@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useProjects, type Project } from '../../context/ProjectContext';
 import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal';
@@ -137,12 +138,12 @@ const AdminProjects = () => {
             )}
 
             {/* Edit/Create Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-                    <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-xl animate-in fade-in zoom-in duration-200">
+            {isModalOpen && createPortal(
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in zoom-in duration-200">
+                    <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-white">{currentProject ? 'Edit Project' : 'New Project'}</h3>
-                            <button onClick={resetForm}><X className="text-gray-400 hover:text-white" /></button>
+                            <button onClick={resetForm}><X className="text-gray-400 hover:text-white transition-colors" /></button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
@@ -152,7 +153,8 @@ const AdminProjects = () => {
                                     required
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                    autoFocus
                                 />
                             </div>
 
@@ -162,7 +164,7 @@ const AdminProjects = () => {
                                     <input
                                         value={formData.liveUrl}
                                         onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -170,7 +172,7 @@ const AdminProjects = () => {
                                     <input
                                         value={formData.githubUrl}
                                         onChange={e => setFormData({ ...formData, githubUrl: e.target.value })}
-                                        className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
                                     />
                                 </div>
                             </div>
@@ -181,7 +183,7 @@ const AdminProjects = () => {
                                     value={formData.techStack}
                                     onChange={e => setFormData({ ...formData, techStack: e.target.value })}
                                     placeholder="React, Firebase, Tailwind"
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
                                 />
                             </div>
 
@@ -192,13 +194,13 @@ const AdminProjects = () => {
                                     rows={4}
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Project Image</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center hover:border-blue-500/50 transition-colors cursor-pointer relative">
+                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center hover:border-blue-500/50 transition-colors cursor-pointer relative bg-black/20">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -233,7 +235,8 @@ const AdminProjects = () => {
                             </div>
                         </form>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
 
             <ConfirmModal

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { Mail, Send, MapPin } from 'lucide-react';
+
 import toast from 'react-hot-toast';
 
 const Contact = () => {
@@ -11,11 +10,19 @@ const Contact = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSending(true);
+
+        const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/my-portfolio-f8863/asia-south1/api';
+        const API_URL = `${API_BASE}/contacts`;
+
         try {
-            await addDoc(collection(db, 'contacts'), {
-                ...formData,
-                createdAt: serverTimestamp(),
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData),
             });
+
+            if (!response.ok) throw new Error('Failed to send message');
+
             toast.success('Message sent successfully!');
             setFormData({ name: '', email: '', message: '' });
         } catch (error) {

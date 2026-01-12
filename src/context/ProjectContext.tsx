@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { db, storage } from '../firebase';
-import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { createContext, useContext, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase';
+import { useUpload } from './UploadContext';
+
 
 export interface Project {
     id: string;
@@ -29,14 +29,21 @@ const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [projects, setProjects] = useState<Project[]>([]);
     const [loading, setLoading] = useState(true);
+    const { uploadFile } = useUpload(); // Utilize UploadContext
+
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const API_BASE = isLocal
+        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
+        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
+    const API_URL = `${API_BASE}/projects`;
 
     const fetchProjects = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const list = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Project));
-            setProjects(list);
+            const response = await fetch(API_URL);
+            if (!response.ok) throw new Error('Failed to fetch projects');
+            const data = await response.json();
+            setProjects(data);
         } catch (error) {
             console.error('Error fetching projects', error);
             toast.error('Failed to load projects');
@@ -53,17 +60,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
             let imageUrl = data.imageUrl || '';
             if (imageFile) {
-                const uniqueName = `projects/${Date.now()}_${imageFile.name}`;
-                const storageRef = ref(storage, uniqueName);
-                await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(storageRef);
+                imageUrl = await uploadFile(imageFile, 'projects');
             }
 
-            await addDoc(collection(db, 'projects'), {
-                ...data,
-                imageUrl,
-                createdAt: serverTimestamp(),
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...data, imageUrl }),
             });
+
+            if (!response.ok) throw new Error('Failed to add project');
+
             toast.success('Project added successfully');
             fetchProjects();
         } catch (error) {
@@ -77,17 +88,21 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
         try {
             let imageUrl = data.imageUrl;
             if (imageFile) {
-                const uniqueName = `projects/${Date.now()}_${imageFile.name}`;
-                const storageRef = ref(storage, uniqueName);
-                await uploadBytes(storageRef, imageFile);
-                imageUrl = await getDownloadURL(storageRef);
+                imageUrl = await uploadFile(imageFile, 'projects');
             }
 
-            await updateDoc(doc(db, 'projects', id), {
-                ...data,
-                ...(imageUrl && { imageUrl }),
-                updatedAt: serverTimestamp(),
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...data, ...(imageUrl && { imageUrl }) }),
             });
+
+            if (!response.ok) throw new Error('Failed to update project');
+
             toast.success('Project updated successfully');
             fetchProjects();
         } catch (error) {
@@ -99,9 +114,16 @@ export const ProjectProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const deleteProject = async (id: string) => {
         try {
-            await deleteDoc(doc(db, 'projects', id));
-            // Optional: delete image from storage
-            // if (imageUrl) { ... } 
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to delete project');
+
             toast.success('Project deleted successfully');
             fetchProjects();
         } catch (error) {
