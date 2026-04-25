@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase';
-
 import { useAuth } from './AuthContext';
 
 export interface ContactMessage {
@@ -9,62 +8,91 @@ export interface ContactMessage {
     name: string;
     email: string;
     message: string;
-    createdAt?: any;
+    createdAt?: string | null;
     status?: 'read' | 'unread';
 }
 
 interface ContactContextType {
     contacts: ContactMessage[];
     loading: boolean;
+    loadingMore: boolean;
+    hasMore: boolean;
+    loadMore: () => Promise<void>;
     deleteContact: (id: string) => Promise<void>;
+    submitContact: (name: string, email: string, message: string) => Promise<void>;
 }
 
 const ContactContext = createContext<ContactContextType | undefined>(undefined);
 
+const getApiBase = () => {
+    return import.meta.env.VITE_API_URL || 'https://api-dp2f6yjbbq-el.a.run.app';
+};
+
+const PAGE_LIMIT = 20;
+
 export const ContactProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [contacts, setContacts] = useState<ContactMessage[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(true);
+    const nextCursorRef = useRef<string | null>(null);
+
     const { user } = useAuth();
+    const API_URL = `${getApiBase()}/contacts`;
 
-    const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-        ? 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api'
-        : (import.meta.env.VITE_API_URL || 'http://127.0.0.1:5001/portfolio-ritik-1/asia-south1/api');
-    const API_URL = `${API_BASE}/contacts`;
-
-    const fetchContacts = async () => {
+    const fetchFirstPage = useCallback(async () => {
+        if (!user) return;
         setLoading(true);
+        nextCursorRef.current = null;
         try {
             const token = await auth.currentUser?.getIdToken();
-            const headers: HeadersInit = token
-                ? { 'Authorization': `Bearer ${token}` }
-                : {};
-
-            const response = await fetch(API_URL, { headers });
-
-            if (response.status === 403) {
-                // Guest/Unauthenticated users might get 403 if they try to view contacts
-                console.warn("Not authorized to view contacts");
+            const response = await fetch(`${API_URL}?limit=${PAGE_LIMIT}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            });
+            if (response.status === 401 || response.status === 403) {
                 setContacts([]);
                 return;
             }
-
             if (!response.ok) throw new Error('Failed to fetch contacts');
-            const data = await response.json();
-            setContacts(data);
+            const json = await response.json();
+            setContacts(json.data);
+            nextCursorRef.current = json.nextCursor;
+            setHasMore(json.hasMore);
         } catch (error) {
-            console.error('Error fetching contacts', error);
-            // toast.error('Failed to load contacts'); // Optional: mute error if it happens on load
+            console.error('Error fetching contacts:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [user, API_URL]);
+
+    const loadMore = useCallback(async () => {
+        if (!user || loadingMore || !hasMore || !nextCursorRef.current) return;
+        setLoadingMore(true);
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const response = await fetch(
+                `${API_URL}?limit=${PAGE_LIMIT}&startAfter=${nextCursorRef.current}`,
+                { headers: token ? { 'Authorization': `Bearer ${token}` } : {} }
+            );
+            if (!response.ok) throw new Error('Failed to fetch more contacts');
+            const json = await response.json();
+            setContacts(prev => [...prev, ...json.data]);
+            nextCursorRef.current = json.nextCursor;
+            setHasMore(json.hasMore);
+        } catch (error) {
+            console.error('Error loading more contacts:', error);
+        } finally {
+            setLoadingMore(false);
+        }
+    }, [user, API_URL, hasMore, loadingMore]);
 
     useEffect(() => {
         if (user) {
-            fetchContacts();
+            fetchFirstPage();
         } else {
             setContacts([]);
-            setLoading(false);
+            setHasMore(true);
+            nextCursorRef.current = null;
         }
     }, [user]);
 
@@ -73,23 +101,35 @@ export const ContactProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const token = await auth.currentUser?.getIdToken();
             const response = await fetch(`${API_URL}/${id}`, {
                 method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                headers: { 'Authorization': `Bearer ${token}` },
             });
-
             if (!response.ok) throw new Error('Failed to delete contact');
-
             toast.success('Message deleted');
-            fetchContacts(); // Refresh list
+            setContacts(prev => prev.filter(c => c.id !== id));
         } catch (error) {
-            console.error('Error deleting contact', error);
+            console.error('Error deleting contact:', error);
             toast.error('Failed to delete message');
         }
     };
 
+    // Public contact submission
+    const submitContact = async (name: string, email: string, message: string) => {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, email, message }),
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || 'Failed to send message');
+        }
+    };
+
     return (
-        <ContactContext.Provider value={{ contacts, loading, deleteContact }}>
+        <ContactContext.Provider value={{
+            contacts, loading, loadingMore, hasMore, loadMore,
+            deleteContact, submitContact,
+        }}>
             {children}
         </ContactContext.Provider>
     );
@@ -97,8 +137,6 @@ export const ContactProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export const useContacts = () => {
     const context = useContext(ContactContext);
-    if (!context) {
-        throw new Error('useContacts must be used within a ContactProvider');
-    }
+    if (!context) throw new Error('useContacts must be used within a ContactProvider');
     return context;
 };

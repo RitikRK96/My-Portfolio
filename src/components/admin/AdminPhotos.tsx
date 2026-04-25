@@ -12,10 +12,13 @@ import toast from 'react-hot-toast';
 const DEFAULT_CATEGORIES = ['Moon', 'Sunsets', 'Random'];
 
 const AdminPhotos = () => {
-    const { photos, addPhoto, deletePhoto } = usePhotos();
+    const { allPhotos: photos, refreshAll, addPhoto, deletePhoto } = usePhotos();
     const [categories, setCategories] = useState<string[]>(DEFAULT_CATEGORIES);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    // Load all photos for admin management on mount
+    useEffect(() => { refreshAll(); }, []);
 
     // Form
     const [imageFile, setImageFile] = useState<File | null>(null);

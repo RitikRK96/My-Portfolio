@@ -73,6 +73,23 @@ body {
     0 0 30px rgba(120, 0, 255, 0.4);
 }
 
+.neon-switch {
+  animation: neonSwitch 4s infinite alternate ease-in-out;
+}
+
+@keyframes neonSwitch {
+  0% {
+    color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.6),
+      0 0 30px rgba(0, 255, 255, 0.4);
+  }
+  100% {
+    color: #bf60ff; /* Lighter purple for better text readability */
+    text-shadow: 0 0 10px rgba(120, 0, 255, 0.8), 0 0 20px rgba(120, 0, 255, 0.6),
+      0 0 30px rgba(120, 0, 255, 0.4);
+  }
+}
+
 .glass-card {
   background: rgba(15, 15, 30, 0.6);
   backdrop-filter: blur(12px);
@@ -110,4 +127,41 @@ body {
   96% {
     transform: translateX(-2px);
   }
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+  border-left: 1px solid rgba(120, 0, 255, 0.08);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7800ff 0%, #00ffff 100%);
+  border-radius: 99px;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9a33ff 0%, #33ffff 100%);
+  box-shadow: 0 0 14px rgba(0, 255, 255, 0.7);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7800ff #0a0a0f;
+}
+
+/* Shared page container used by non-home pages */
+.page-container {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }

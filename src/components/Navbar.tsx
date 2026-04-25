@@ -29,7 +29,7 @@ const Navbar = () => {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex-shrink-0">
-                        <Link to="/" className="text-2xl font-bold tracking-tighter hover:text-blue-400 transition-colors flex items-center gap-2">
+                        <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2 neon-switch">
                             <Terminal className="w-6 h-6" />
                             Ritik Kumar
                         </Link>

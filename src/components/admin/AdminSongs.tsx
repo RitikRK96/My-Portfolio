@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSongs } from '../../context/SongContext';
 import { Trash2, Music, X, Plus } from 'lucide-react';
@@ -6,9 +6,12 @@ import { Trash2, Music, X, Plus } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal';
 
 const AdminSongs = () => {
-    const { songs, addSong, deleteSong } = useSongs();
+    const { allSongs: songs, refreshAll, addSong, deleteSong } = useSongs();
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Load all songs for admin management on mount
+    useEffect(() => { refreshAll(); }, []);
 
     const [formData, setFormData] = useState({ title: '', url: '', type: 'song' });
 
@@ -18,14 +21,23 @@ const AdminSongs = () => {
 
         try {
             // Basic embed converter for YouTube/Spotify
-            let embedUrl = formData.url;
-            if (formData.url.includes('youtube.com/watch?v=')) {
-                const videoId = formData.url.split('v=')[1]?.split('&')[0];
+            let embedUrl = formData.url.trim();
+            
+            // If user pastes an entire <iframe> embed code, extract the src URL
+            if (embedUrl.toLowerCase().startsWith('<iframe')) {
+                const srcMatch = embedUrl.match(/src=["'](.*?)["']/);
+                if (srcMatch && srcMatch[1]) {
+                    embedUrl = srcMatch[1];
+                }
+            } else if (embedUrl.includes('youtube.com/watch?v=')) {
+                const videoId = embedUrl.split('v=')[1]?.split('&')[0];
                 embedUrl = `https://www.youtube.com/embed/${videoId}`;
-            } else if (formData.url.includes('spotify.com')) {
-                // Spotify usually needs 'embed' in path, user might paste normal link
-                // Simple heuristic replace
-                embedUrl = formData.url.replace('open.spotify.com', 'open.spotify.com/embed');
+            } else if (embedUrl.includes('youtu.be/')) {
+                const videoId = embedUrl.split('youtu.be/')[1]?.split('?')[0];
+                embedUrl = `https://www.youtube.com/embed/${videoId}`;
+            } else if (embedUrl.includes('spotify.com') && !embedUrl.includes('/embed/')) {
+                // Spotify usually needs 'embed' in path
+                embedUrl = embedUrl.replace('open.spotify.com', 'open.spotify.com/embed');
             }
 
             await addSong(formData.title || 'Untitled', embedUrl, formData.type as 'song' | 'playlist');

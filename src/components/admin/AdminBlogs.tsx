@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal';
 import { useBlogs, type Blog } from '../../context/BlogContext';
 
 const AdminBlogs = () => {
-    const { blogs, loading, addBlog, updateBlog, deleteBlog } = useBlogs();
+    const { allBlogs: blogs, allLoading: loading, refreshAll, addBlog, updateBlog, deleteBlog } = useBlogs();
+
+    // Load all blogs for admin management on mount
+    useEffect(() => { refreshAll(); }, []);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentBlog, setCurrentBlog] = useState<Blog | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);

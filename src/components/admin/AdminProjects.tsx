@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useProjects, type Project } from '../../context/ProjectContext';
 import { Plus, Edit2, Trash2, X, Upload } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal';
 
 const AdminProjects = () => {
-    const { projects, loading, addProject, updateProject, deleteProject } = useProjects();
+    const { allProjects: projects, allLoading: loading, refreshAll, addProject, updateProject, deleteProject } = useProjects();
+
+    // Load all projects for admin management on mount
+    useEffect(() => { refreshAll(); }, []);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [currentProject, setCurrentProject] = useState<Project | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
