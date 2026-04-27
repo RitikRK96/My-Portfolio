@@ -3,10 +3,19 @@ import { useBlogs } from '../context/BlogContext';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
+import { useSEO } from '../hooks/useSEO';
 
 const Blogs = () => {
     const { blogs, loading, loadingMore, hasMore, loadMore } = useBlogs();
     const sentinelRef = useRef<HTMLDivElement>(null);
+
+    useSEO(
+        'Blog & Articles | Ritik Kumar', 
+        'Read my thoughts, tutorials, and insights on development and technology.',
+        'Tech Blog, React Tutorials, AI Insights, Web Development',
+        'https://avatars.githubusercontent.com/u/96340458?v=4',
+        'https://ritik.world/blogs'
+    );
 
     // Infinite scroll: observe the sentinel element at the bottom
     useEffect(() => {
@@ -36,11 +45,19 @@ const Blogs = () => {
 
     return (
         <div className="page-container pb-20">
-            <div className="text-center mb-16" data-aos="fade-down">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-blue-500 mb-4 inline-block pb-2">
-                    Blog &amp; Articles
+            <div className="text-center mb-16 relative" data-aos="fade-down">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-neon-blue/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-neon-purple text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; My Mind /&gt;
+                </span>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
+                        Blog &amp; Articles
+                    </span>
                 </h1>
-                <p className="text-gray-400">Thoughts, tutorials, and insights on development.</p>
+                <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
+                    Thoughts, tutorials, and insights on development.
+                </p>
             </div>
 
             {blogs.length === 0 ? (
@@ -56,7 +73,7 @@ const Blogs = () => {
                                 data-aos="fade-up"
                                 data-aos-delay={Math.min(index * 100, 400)}
                             >
-                                <div className="h-48 overflow-hidden bg-gray-800">
+                                <div className="relative h-48 w-full overflow-hidden bg-gray-800">
                                     {blog.coverImage ? (
                                         <img
                                             src={blog.coverImage}
@@ -78,7 +95,7 @@ const Blogs = () => {
                                         {blog.title}
                                     </h3>
                                     <p className="text-gray-400 text-sm line-clamp-3 mb-4">
-                                        {blog.content.slice(0, 150)}...
+                                        {blog.content.replace(/[#*`_\[\]()]/g, '').replace(/<br\s*\/?>/gi, ' ').slice(0, 150)}...
                                     </p>
                                     <div className="flex items-center text-blue-400 text-sm font-medium gap-1 group-hover:gap-2 transition-all">
                                         Read Article <ArrowRight size={16} />

@@ -1,5 +1,7 @@
 import { Github, Linkedin, Mail, Briefcase, GraduationCap, Award, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ContactSection from '../components/ContactSection';
+import { useSEO } from '../hooks/useSEO';
 
 const WEB_SKILLS = [
     { name: 'React.js', icon: 'https://cdn.simpleicons.org/react' },
@@ -27,6 +29,14 @@ const AI_SKILLS = [
 ];
 
 const Home = () => {
+    useSEO(
+        "Ritik Gupta | Full-Stack Developer & AI Specialist",
+        "Portfolio of Ritik Gupta, a Full-Stack Developer specializing in React.js, Node.js, and Data Analytics & AI.",
+        "Ritik Gupta, Full-Stack Developer, React.js, Node.js, AI, Data Analytics",
+        "https://avatars.githubusercontent.com/u/96340458?v=4",
+        "https://ritik.world/"
+    );
+
     return (
         <div className="space-y-0">
             {/* ── Hero ── */}
@@ -35,13 +45,23 @@ const Home = () => {
                     <div className="flex flex-col-reverse lg:flex-row items-center justify-between gap-10 lg:gap-16">
                         {/* Text */}
                         <div className="flex-1 text-center lg:text-left" data-aos="fade-up">
-                            <span className="inline-block text-neon-blue text-sm sm:text-base orbitron tracking-[.25em] mb-3 opacity-80">
-                                {'<'} Full-Stack Developer {'/>'} 
+                            <div className="flex justify-center lg:justify-start mb-6">
+                                <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/5 border border-green-500/20 text-green-400 text-xs font-bold tracking-wide shadow-[0_0_20px_rgba(34,197,94,0.1)] backdrop-blur-sm">
+                                    <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span>
+                                    </span>
+                                    AVAILABLE FOR FREELANCE & PROJECTS
+                                </div>
+                            </div>
+
+                            <span className="inline-block text-neon-blue text-sm sm:text-base orbitron tracking-[.25em] mb-4 opacity-80">
+                                {'<'} Full-Stack Developer {'/>'}
                             </span>
 
                             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black orbitron leading-[1.05] mb-5">
                                 <span className="neon-text block">RITIK</span>
-                                <span className="neon-text-purple block">KUMAR</span>
+                                <span className="neon-text-purple block">GUPTA</span>
                             </h1>
 
                             <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8">
@@ -83,7 +103,7 @@ const Home = () => {
                                 <div className="absolute inset-0 rounded-full border-2 border-neon-blue/50 shadow-[0_0_40px_rgba(0,255,255,0.25)]" />
                                 <img
                                     src="https://avatars.githubusercontent.com/u/96340458?v=4"
-                                    alt="Ritik Kumar"
+                                    alt="Ritik Gupta"
                                     className="w-full h-full object-cover rounded-full p-1.5"
                                 />
                                 <div className="absolute -bottom-3 -right-3 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-neon-purple to-neon-blue rounded-full flex items-center justify-center shadow-lg shadow-neon-blue/30 animate-bounce">
@@ -120,7 +140,7 @@ const Home = () => {
                         <div className="flex gap-3 mt-6">
                             {[
                                 { icon: <Github size={18} />, href: 'https://github.com/RitikRK96', label: 'GitHub' },
-                                { icon: <Linkedin size={18} />, href: 'https://linkedin.com/in/ritik-kumar', label: 'LinkedIn' },
+                                { icon: <Linkedin size={18} />, href: 'https://www.linkedin.com/in/ritikkumar08/', label: 'LinkedIn' },
                                 { icon: <Mail size={18} />, href: 'mailto:ritikrk008@gmail.com', label: 'Email' },
                             ].map(s => (
                                 <a key={s.label} href={s.href} target="_blank" rel="noreferrer" title={s.label}
@@ -260,38 +280,27 @@ const Home = () => {
             </section>
 
             {/* ── Contact CTA ── */}
-            <section className="py-16 sm:py-24 px-4 sm:px-6">
-                <div className="max-w-4xl mx-auto">
-                    <div className="glass-card rounded-2xl p-10 sm:p-16 text-center relative overflow-hidden" data-aos="fade-up">
-                        {/* Glow blobs */}
-                        <div className="absolute -top-16 -left-16 w-48 h-48 bg-neon-purple/10 rounded-full blur-3xl pointer-events-none" />
-                        <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-neon-blue/10 rounded-full blur-3xl pointer-events-none" />
+            <section className="py-16 sm:py-24 px-4 sm:px-6 relative overflow-hidden">
+                {/* Glow blobs */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] bg-neon-blue/5 rounded-[100%] blur-[100px] pointer-events-none" />
 
-                        <div className="relative z-10">
-                            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-neon-blue text-xs orbitron tracking-wider mb-5">
-                                Available for Opportunities
-                            </span>
-                            <h2 className="text-3xl sm:text-5xl font-black orbitron mb-4 leading-tight">
-                                <span className="neon-text">Let's Build</span>{' '}
-                                <span className="neon-text-purple">Something</span>
-                                <br />
-                                <span className="text-white">Amazing Together</span>
-                            </h2>
-                            <p className="text-gray-400 max-w-lg mx-auto text-sm sm:text-base mb-8">
-                                Whether it's a startup idea, a freelance project, or just a chat about tech — I'm always excited to connect.
-                            </p>
-                            <div className="flex flex-wrap gap-4 justify-center">
-                                <Link to="/contact"
-                                    className="px-8 py-3.5 rounded-full bg-gradient-to-r from-neon-purple to-neon-blue text-black font-bold orbitron text-sm hover:scale-105 active:scale-95 transition-transform shadow-[0_0_24px_rgba(0,255,255,0.35)]">
-                                    Send a Message
-                                </Link>
-                                <a href="mailto:ritikrk008@gmail.com"
-                                    className="px-8 py-3.5 rounded-full border border-white/20 text-white font-bold orbitron text-sm hover:bg-white/5 hover:scale-105 active:scale-95 transition-all">
-                                    Email Directly
-                                </a>
-                            </div>
-                        </div>
+                <div className="max-w-6xl mx-auto relative z-10">
+                    <div className="text-center mb-16" data-aos="fade-up">
+                        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neon-blue/10 border border-neon-blue/20 text-neon-blue text-xs orbitron tracking-wider mb-5">
+                            Available for Opportunities
+                        </span>
+                        <h2 className="text-3xl sm:text-5xl font-black orbitron mb-4 leading-tight">
+                            <span className="neon-text">Let's Build</span>{' '}
+                            <span className="neon-text-purple">Something</span>
+                            <br />
+                            <span className="text-white">Amazing Together</span>
+                        </h2>
+                        <p className="text-gray-400 max-w-lg mx-auto text-sm sm:text-base">
+                            Whether it's a startup idea, a freelance project, or just a chat about tech — I'm always excited to connect.
+                        </p>
                     </div>
+
+                    <ContactSection />
                 </div>
             </section>
 

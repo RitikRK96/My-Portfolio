@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Bold, Italic, Link as LinkIcon, Heading } from 'lucide-react';
 import ConfirmModal from '../ConfirmModal';
 import { useBlogs, type Blog } from '../../context/BlogContext';
 
@@ -16,6 +16,7 @@ const AdminBlogs = () => {
     const [formData, setFormData] = useState({ title: '', content: '' });
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const contentRef = useRef<HTMLTextAreaElement>(null);
 
     const resetForm = () => {
         setFormData({ title: '', content: '' });
@@ -68,6 +69,27 @@ const AdminBlogs = () => {
         }
     };
 
+    const insertFormat = (prefix: string, suffix: string = '') => {
+        if (!contentRef.current) return;
+        const textarea = contentRef.current;
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = formData.content.substring(start, end);
+        
+        const newContent = 
+            formData.content.substring(0, start) + 
+            prefix + selectedText + suffix + 
+            formData.content.substring(end);
+            
+        setFormData({ ...formData, content: newContent });
+        
+        // Return focus to textarea after a short delay
+        setTimeout(() => {
+            textarea.focus();
+            textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+        }, 0);
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
@@ -91,7 +113,7 @@ const AdminBlogs = () => {
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-lg font-bold text-white">{blog.title}</h3>
-                                <p className="text-gray-400 text-sm line-clamp-1">{blog.content}</p>
+                                <p className="text-gray-400 text-sm line-clamp-1">{blog.content.replace(/[#*`_\[\]()]/g, '').replace(/<br\s*\/?>/gi, ' ')}</p>
                             </div>
                             <div className="flex gap-2">
                                 <button onClick={() => handleEdit(blog)} className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg"><Edit2 size={18} /></button>
@@ -136,7 +158,22 @@ const AdminBlogs = () => {
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Content (Markdown Supported)</label>
+                                <div className="flex items-center gap-2 mb-2 bg-black/40 p-2 rounded-lg border border-white/10">
+                                    <button type="button" onClick={() => insertFormat('**', '**')} className="p-1.5 hover:bg-white/10 rounded text-gray-300" title="Bold">
+                                        <Bold size={16} />
+                                    </button>
+                                    <button type="button" onClick={() => insertFormat('_', '_')} className="p-1.5 hover:bg-white/10 rounded text-gray-300" title="Italic">
+                                        <Italic size={16} />
+                                    </button>
+                                    <button type="button" onClick={() => insertFormat('# ')} className="p-1.5 hover:bg-white/10 rounded text-gray-300" title="Heading">
+                                        <Heading size={16} />
+                                    </button>
+                                    <button type="button" onClick={() => insertFormat('[', '](url)')} className="p-1.5 hover:bg-white/10 rounded text-gray-300" title="Link">
+                                        <LinkIcon size={16} />
+                                    </button>
+                                </div>
                                 <textarea
+                                    ref={contentRef}
                                     required
                                     rows={15}
                                     value={formData.content}

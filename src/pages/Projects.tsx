@@ -2,8 +2,16 @@ import { useEffect, useRef } from 'react';
 import { useProjects } from '../context/ProjectContext';
 import { Github, ExternalLink, Calendar, Code2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useSEO } from '../hooks/useSEO';
 
 const Projects = () => {
+    useSEO(
+        "Projects & Portfolio | Ritik Kumar",
+        "Explore my latest web development and AI projects including Full-Stack applications, dashboards, and SaaS platforms.",
+        "Ritik Kumar Projects, React Projects, AI Projects, Full-Stack Portfolio",
+        "https://avatars.githubusercontent.com/u/96340458?v=4",
+        "https://ritik.world/projects"
+    );
     const { projects, loading, loadingMore, hasMore, loadMore } = useProjects();
     const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -33,11 +41,17 @@ const Projects = () => {
 
     return (
         <div className="page-container pb-20">
-            <div className="text-center mb-16" data-aos="fade-down">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4 inline-block pb-2">
-                    Featured Projects
+            <div className="text-center mb-16 relative" data-aos="fade-down">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-neon-purple/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-neon-blue text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; My Work /&gt;
+                </span>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue">
+                        Featured Projects
+                    </span>
                 </h1>
-                <p className="text-gray-400 max-w-2xl mx-auto">
+                <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
                     A showcase of my recent work, side projects, and experiments.
                 </p>
             </div>
@@ -56,7 +70,7 @@ const Projects = () => {
                                 data-aos="fade-up"
                                 data-aos-delay={Math.min(index * 100, 400)}
                             >
-                                <div className="relative h-48 overflow-hidden">
+                                <div className="relative h-48 w-full overflow-hidden">
                                     {project.imageUrl ? (
                                         <img
                                             src={project.imageUrl}

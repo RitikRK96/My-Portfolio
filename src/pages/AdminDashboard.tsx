@@ -40,7 +40,7 @@ const AdminDashboard = () => {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={clsx(
-                                        'w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative',
+                                        'w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative cursor-pointer',
                                         activeTab === tab.id
                                             ? 'bg-neon-blue/15 text-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.15)] border border-neon-blue/30'
                                             : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'

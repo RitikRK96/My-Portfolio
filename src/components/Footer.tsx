@@ -73,7 +73,7 @@ const Footer = () => (
                                 className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:border-white/30 transition-all">
                                 <Github size={16} />
                             </a>
-                            <a href="https://linkedin.com/in/ritik-kumar" target="_blank" rel="noreferrer"
+                            <a href="https://www.linkedin.com/in/ritikkumar08/" target="_blank" rel="noreferrer"
                                 className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-neon-blue hover:border-neon-blue/40 transition-all">
                                 <Linkedin size={16} />
                             </a>

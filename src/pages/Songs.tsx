@@ -40,11 +40,19 @@ const Songs = () => {
 
     return (
         <div className="page-container pb-20">
-            <div className="text-center mb-16" data-aos="fade-down">
-                <h1 className="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-teal-400 mb-4 inline-block pb-2">
-                    Music &amp; Vibes
+            <div className="text-center mb-16 relative" data-aos="fade-down">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-teal-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-green-400 text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; Now Playing /&gt;
+                </span>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-400">
+                        Music &amp; Vibes
+                    </span>
                 </h1>
-                <p className="text-gray-400">What I'm listening to right now.</p>
+                <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
+                    What I'm listening to right now.
+                </p>
             </div>
 
             <div className="max-w-4xl mx-auto space-y-12">

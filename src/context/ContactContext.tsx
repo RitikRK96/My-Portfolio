@@ -123,6 +123,26 @@ export const ContactProvider: React.FC<{ children: React.ReactNode }> = ({ child
             const err = await response.json().catch(() => ({}));
             throw new Error(err.error || 'Failed to send message');
         }
+
+        // Send email notification via FormSubmit
+        try {
+            await fetch("https://formsubmit.co/ajax/ritikrk008@gmail.com", {
+                method: "POST",
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    email: email,
+                    message: message,
+                    _subject: `New Portfolio Message from ${name}`
+                })
+            });
+        } catch (err) {
+            console.error('Failed to send email notification via FormSubmit:', err);
+            // Do not throw here so the user still gets a success message for the DB save
+        }
     };
 
     return (

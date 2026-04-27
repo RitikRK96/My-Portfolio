@@ -12,6 +12,7 @@ import 'aos/dist/aos.css';
 
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import { useAuth } from './context/AuthContext';
 
 // Pages - Placeholders for now
@@ -48,7 +49,7 @@ const App = () => {
         <PhotoProvider>
           <SongProvider>
             <ContactProvider>
-              <div className="min-h-screen font-sans text-gray-100 selection:bg-blue-500 selection:text-white">
+              <div className="min-h-screen w-full overflow-x-hidden font-sans text-gray-100 selection:bg-blue-500 selection:text-white">
                 <div className="cyber-bg"></div>
                 <div className="grid-bg"></div>
                 <Navbar />
@@ -73,6 +74,7 @@ const App = () => {
                     />
                   </Routes>
                 </div>
+                <ScrollToTop />
                 <Footer />
                 <Toaster position="bottom-right" containerClassName="z-[9999999]" toastOptions={{
                   className: 'glass !bg-gray-900 !text-white !border !border-white/10',
