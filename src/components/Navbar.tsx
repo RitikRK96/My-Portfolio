@@ -31,6 +31,7 @@ const Navbar = () => {
 
     const adminLinks = [
         { name: 'Dashboard', path: '/admin' },
+        { name: 'Books', path: '/admin/books' },
     ];
 
     const links = user ? [...navLinks, ...adminLinks] : navLinks;

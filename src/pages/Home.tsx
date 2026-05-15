@@ -30,9 +30,9 @@ const AI_SKILLS = [
 
 const Home = () => {
     useSEO(
-        "Ritik Gupta | Full-Stack Developer & AI Specialist",
-        "Portfolio of Ritik Gupta, a Full-Stack Developer specializing in React.js, Node.js, and Data Analytics & AI.",
-        "Ritik Gupta, Full-Stack Developer, React.js, Node.js, AI, Data Analytics",
+        "Ritik Kumar | Full-Stack Developer & AI Specialist",
+        "Portfolio of Ritik Kumar, a Full-Stack Developer specializing in React.js, Node.js, and Data Analytics & AI.",
+        "Ritik Kumar, Full-Stack Developer, React.js, Node.js, AI, Data Analytics",
         "https://avatars.githubusercontent.com/u/96340458?v=4",
         "https://ritik.world/"
     );
@@ -61,7 +61,7 @@ const Home = () => {
 
                             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black orbitron leading-[1.05] mb-5">
                                 <span className="neon-text block">RITIK</span>
-                                <span className="neon-text-purple block">GUPTA</span>
+                                <span className="neon-text-purple block">Kumar</span>
                             </h1>
 
                             <p className="text-base sm:text-lg lg:text-xl text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8">
@@ -103,7 +103,7 @@ const Home = () => {
                                 <div className="absolute inset-0 rounded-full border-2 border-neon-blue/50 shadow-[0_0_40px_rgba(0,255,255,0.25)]" />
                                 <img
                                     src="https://avatars.githubusercontent.com/u/96340458?v=4"
-                                    alt="Ritik Gupta"
+                                    alt="Ritik Kumar"
                                     className="w-full h-full object-cover rounded-full p-1.5"
                                 />
                                 <div className="absolute -bottom-3 -right-3 w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-neon-purple to-neon-blue rounded-full flex items-center justify-center shadow-lg shadow-neon-blue/30 animate-bounce">

@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { LayoutDashboard, FolderKanban, PenTool, Image, Music, Mail } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, PenTool, Image, Music, Mail, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
+
+import { Link } from 'react-router-dom';
 
 // We will import these later as we create them
 import AdminProjects from '../components/admin/AdminProjects';
@@ -53,6 +55,18 @@ const AdminDashboard = () => {
                                 </button>
                             );
                         })}
+
+                        <div className="pt-4 mt-4 border-t border-white/10">
+                            <Link
+                                to="/admin/books"
+                                className="w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative cursor-pointer text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"
+                            >
+                                <BookOpen size={22} className="flex-shrink-0" />
+                                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap tracking-wide">
+                                    Books Library
+                                </span>
+                            </Link>
+                        </div>
                     </nav>
                 </div>
             </div>

@@ -25,6 +25,8 @@ import Songs from './pages/Songs';
 import Contact from './pages/Contact';
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
+import BookWriter from './pages/BookWriter';
+import BooksLibrary from './pages/BooksLibrary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -49,11 +51,11 @@ const App = () => {
         <PhotoProvider>
           <SongProvider>
             <ContactProvider>
-              <div className="min-h-screen w-full overflow-x-hidden font-sans text-gray-100 selection:bg-blue-500 selection:text-white">
+              <div className="min-h-screen w-full flex flex-col overflow-x-hidden font-sans text-gray-100 selection:bg-blue-500 selection:text-white">
                 <div className="cyber-bg"></div>
                 <div className="grid-bg"></div>
                 <Navbar />
-                <div className="pt-20">
+                <main className="pt-16 flex-1 flex flex-col">
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/projects" element={<Projects />} />
@@ -72,8 +74,25 @@ const App = () => {
                         </ProtectedRoute>
                       }
                     />
+
+                    <Route
+                      path="/admin/books"
+                      element={
+                        <ProtectedRoute>
+                          <BooksLibrary />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/book-writer"
+                      element={
+                        <ProtectedRoute>
+                          <BookWriter />
+                        </ProtectedRoute>
+                      }
+                    />
                   </Routes>
-                </div>
+                </main>
                 <ScrollToTop />
                 <Footer />
                 <Toaster position="bottom-right" containerClassName="z-[9999999]" toastOptions={{

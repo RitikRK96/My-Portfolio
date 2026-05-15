@@ -37,6 +37,7 @@ app.use('/blogs', require('./routes/blogs'));
 app.use('/photos', require('./routes/photos'));
 app.use('/songs', require('./routes/songs'));
 app.use('/contacts', require('./routes/contacts'));
+app.use('/books', require('./routes/books'));
 
 // Export API
 exports.api = onRequest(app);
