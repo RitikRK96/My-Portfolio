@@ -67,6 +67,38 @@ body {
   }
 }
 
+@keyframes slideInLeft {
+  0%   { opacity: 0; transform: translateX(-40px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInDown {
+  0%   { opacity: 0; transform: translateY(-20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes narutoGlow {
+  0%   { color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.8),  0 0 20px rgba(251,146,60,0.4); }
+  25%  { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.9), 0 0 24px rgba(251,191,36,0.5); }
+  50%  { color: #ef4444; text-shadow: 0 0 12px rgba(239,68,68,0.9),  0 0 28px rgba(239,68,68,0.5); }
+  75%  { color: #f97316; text-shadow: 0 0 10px rgba(249,115,22,0.9), 0 0 24px rgba(249,115,22,0.5); }
+  100% { color: #fb923c; text-shadow: 0 0 8px rgba(251,146,60,0.8),  0 0 20px rgba(251,146,60,0.4); }
+}
+
+.naruto-logo-text {
+  animation: narutoGlow 3s ease-in-out infinite;
+}
+
 .neon-text {
   text-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.6),
     0 0 30px rgba(0, 255, 255, 0.4);
@@ -141,24 +173,24 @@ body {
 
 ::-webkit-scrollbar-track {
   background: #0a0a0f;
-  border-left: 1px solid rgba(120, 0, 255, 0.08);
+  border-left: 1px solid rgba(255, 123, 0, 0.08);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #7800ff 0%, #00ffff 100%);
+  background: linear-gradient(180deg, #ff0000 0%, #ff7b00 100%);
   border-radius: 99px;
-  box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+  box-shadow: 0 0 8px rgba(255, 123, 0, 0.4);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9a33ff 0%, #33ffff 100%);
-  box-shadow: 0 0 14px rgba(0, 255, 255, 0.7);
+  background: linear-gradient(180deg, #ff3333 0%, #ffa333 100%);
+  box-shadow: 0 0 14px rgba(255, 123, 0, 0.7);
 }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #7800ff #0a0a0f;
+  scrollbar-color: #ff0000 #0a0a0f;
 }
 
 /* Shared page container used by non-home pages */
@@ -209,4 +241,73 @@ button, a, [role="button"] {
   box-shadow: inset 0 0 25px rgba(0, 255, 255, 0.4),
               0 0 25px rgba(0, 255, 255, 0.3);
   border-color: rgba(0, 255, 255, 0.6);
+}
+
+.liquid-glass-naruto {
+  background: rgba(255, 123, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 123, 0, 0.3);
+  box-shadow: inset 0 0 15px rgba(255, 123, 0, 0.12),
+              0 8px 32px rgba(0, 0, 0, 0.4),
+              0 0 0 0 rgba(255, 123, 0, 0.3);
+  animation: liquidMorph 4s linear infinite, glowPulse 3s ease-in-out infinite;
+  color: #fb923c;
+}
+
+.liquid-glass-naruto:hover {
+  background: rgba(255, 123, 0, 0.18);
+  box-shadow: inset 0 0 25px rgba(255, 123, 0, 0.3),
+              0 0 30px rgba(255, 123, 0, 0.3);
+  border-color: rgba(255, 123, 0, 0.6);
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: inset 0 0 15px rgba(255, 123, 0, 0.12), 0 8px 32px rgba(0,0,0,0.4), 0 0 8px rgba(255,123,0,0.15); }
+  50%       { box-shadow: inset 0 0 20px rgba(255, 123, 0, 0.25), 0 8px 32px rgba(0,0,0,0.4), 0 0 18px rgba(255,123,0,0.3); }
+}
+
+/* ── Naruto Theme Animations ── */
+.naruto-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 20% 50%, rgba(255, 123, 0, 0.04) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(255, 0, 0, 0.03) 0%, transparent 50%);
+  z-index: -2;
+  pointer-events: none;
+}
+
+.naruto-text {
+  background: linear-gradient(to right, #ffffff, #ffd9b3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+}
+
+.sharingan-text {
+  color: #ff4444;
+  text-shadow: none;
+}
+
+.shuriken-spin {
+  animation: shurikenSpin 1s linear infinite;
+}
+@keyframes shurikenSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.naruto-card {
+  background: rgba(20, 10, 5, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 123, 0, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+.naruto-card:hover {
+  border-color: rgba(255, 123, 0, 0.5);
+  box-shadow: 0 0 20px rgba(255, 123, 0, 0.2);
 }

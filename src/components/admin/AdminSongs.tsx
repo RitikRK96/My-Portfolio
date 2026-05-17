@@ -66,7 +66,7 @@ const AdminSongs = () => {
                 <h2 className="text-2xl font-bold text-white">Manage Songs & Playlists</h2>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                     <Plus size={20} /> Add New
                 </button>
@@ -76,12 +76,12 @@ const AdminSongs = () => {
                 {songs.map(song => (
                     <div key={song.id} className="bg-white/5 border border-white/10 rounded-lg p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 bg-white/5 rounded-full text-blue-400">
+                            <div className="p-3 bg-white/5 rounded-full text-orange-400">
                                 <Music size={20} />
                             </div>
                             <div>
                                 <h4 className="font-bold text-white">{song.title}</h4>
-                                <a href={song.url} target="_blank" rel="noreferrer" className="text-xs text-blue-400 hover:underline line-clamp-1">{song.url}</a>
+                                <a href={song.url} target="_blank" rel="noreferrer" className="text-xs text-orange-400 hover:underline line-clamp-1">{song.url}</a>
                                 <span className="text-xs text-gray-500 uppercase">{song.type}</span>
                             </div>
                         </div>
@@ -96,7 +96,7 @@ const AdminSongs = () => {
             {/* Full Screen Modal */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="glass-card w-full max-w-lg p-8 rounded-xl relative shadow-2xl border border-white/10">
+                    <div className="naruto-card w-full max-w-lg p-8 rounded-xl relative shadow-2xl border border-white/10">
                         <button
                             onClick={() => setIsModalOpen(false)}
                             className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
@@ -112,7 +112,7 @@ const AdminSongs = () => {
                                 <input
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-orange-500 transition-colors"
                                     placeholder="My Fav Jam"
                                     autoFocus
                                 />
@@ -124,7 +124,7 @@ const AdminSongs = () => {
                                     required
                                     value={formData.url}
                                     onChange={e => setFormData({ ...formData, url: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-orange-500 transition-colors"
                                     placeholder="https://..."
                                 />
                             </div>
@@ -134,14 +134,14 @@ const AdminSongs = () => {
                                 <select
                                     value={formData.type}
                                     onChange={e => setFormData({ ...formData, type: e.target.value as any })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-blue-500 transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white outline-none focus:border-orange-500 transition-colors"
                                 >
                                     <option value="song" className="bg-gray-900">Song</option>
                                     <option value="playlist" className="bg-gray-900">Playlist</option>
                                 </select>
                             </div>
 
-                            <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-lg shadow-blue-900/20 transition-all transform hover:scale-[1.02]">
+                            <button type="submit" className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold shadow-lg shadow-orange-900/20 transition-all transform hover:scale-[1.02]">
                                 Add to Library
                             </button>
                         </form>

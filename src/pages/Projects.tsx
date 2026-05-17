@@ -42,13 +42,13 @@ const Projects = () => {
     return (
         <div className="page-container pb-20">
             <div className="text-center mb-16 relative" data-aos="fade-down">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-neon-purple/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
-                <span className="inline-block text-neon-blue text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
-                    &lt; My Work /&gt;
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-red-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-orange-400 text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; Mission Logs /&gt;
                 </span>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-purple to-neon-blue">
-                        Featured Projects
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">
+                        S-Rank Missions
                     </span>
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
@@ -66,7 +66,7 @@ const Projects = () => {
                         {projects.map((project, index) => (
                             <div
                                 key={project.id}
-                                className="glass-card rounded-xl overflow-hidden flex flex-col group h-full"
+                                className="naruto-card rounded-xl overflow-hidden flex flex-col group h-full"
                                 data-aos="fade-up"
                                 data-aos-delay={Math.min(index * 100, 400)}
                             >
@@ -79,7 +79,7 @@ const Projects = () => {
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         />
                                     ) : (
-                                        <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+                                        <div className="w-full h-full bg-gradient-to-br from-gray-900 to-orange-950 flex items-center justify-center">
                                             <Code2 className="text-gray-600 w-12 h-12" />
                                         </div>
                                     )}
@@ -101,7 +101,7 @@ const Projects = () => {
 
                                 <div className="p-6 flex-1 flex flex-col">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                                        <h3 className="text-xl font-bold text-white group-hover:text-orange-400 transition-colors">
                                             {project.title}
                                         </h3>
                                         {project.createdAt && (

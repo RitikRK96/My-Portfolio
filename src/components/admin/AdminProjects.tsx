@@ -90,7 +90,7 @@ const AdminProjects = () => {
                 <h2 className="text-2xl font-bold text-white">Manage Projects</h2>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                     <Plus size={20} /> Add Project
                 </button>
@@ -115,7 +115,7 @@ const AdminProjects = () => {
                                 <p className="text-gray-400 text-sm line-clamp-2 mt-1">{project.description}</p>
                                 <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
                                     {project.techStack.map(pc => (
-                                        <span key={pc} className="text-xs px-2 py-1 bg-white/10 rounded-full text-blue-200">{pc}</span>
+                                        <span key={pc} className="text-xs px-2 py-1 bg-white/10 rounded-full text-orange-200">{pc}</span>
                                     ))}
                                 </div>
                             </div>
@@ -123,7 +123,7 @@ const AdminProjects = () => {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => handleEdit(project)}
-                                    className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors"
+                                    className="p-2 text-orange-400 hover:bg-orange-500/20 rounded-lg transition-colors"
                                 >
                                     <Edit2 size={20} />
                                 </button>
@@ -143,7 +143,7 @@ const AdminProjects = () => {
             {/* Edit/Create Modal */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in zoom-in duration-200">
-                    <div className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl border border-white/10">
+                    <div className="naruto-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-white">{currentProject ? 'Edit Project' : 'New Project'}</h3>
                             <button onClick={resetForm}><X className="text-gray-400 hover:text-white transition-colors" /></button>
@@ -156,7 +156,7 @@ const AdminProjects = () => {
                                     required
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                     autoFocus
                                 />
                             </div>
@@ -167,7 +167,7 @@ const AdminProjects = () => {
                                     <input
                                         value={formData.liveUrl}
                                         onChange={e => setFormData({ ...formData, liveUrl: e.target.value })}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -175,7 +175,7 @@ const AdminProjects = () => {
                                     <input
                                         value={formData.githubUrl}
                                         onChange={e => setFormData({ ...formData, githubUrl: e.target.value })}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                     />
                                 </div>
                             </div>
@@ -186,7 +186,7 @@ const AdminProjects = () => {
                                     value={formData.techStack}
                                     onChange={e => setFormData({ ...formData, techStack: e.target.value })}
                                     placeholder="React, Firebase, Tailwind"
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                 />
                             </div>
 
@@ -197,13 +197,13 @@ const AdminProjects = () => {
                                     rows={4}
                                     value={formData.description}
                                     onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                 />
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-400 mb-1">Project Image</label>
-                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center hover:border-blue-500/50 transition-colors cursor-pointer relative bg-black/20">
+                                <div className="border-2 border-dashed border-white/10 rounded-lg p-6 text-center hover:border-orange-500/50 transition-colors cursor-pointer relative bg-black/20">
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -231,7 +231,7 @@ const AdminProjects = () => {
                                 <button
                                     type="submit"
                                     disabled={uploading}
-                                    className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-colors disabled:opacity-50"
+                                    className="px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold transition-colors disabled:opacity-50"
                                 >
                                     {uploading ? 'Saving...' : 'Save Project'}
                                 </button>

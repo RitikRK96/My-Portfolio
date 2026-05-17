@@ -1,19 +1,18 @@
-/**
- * BookWriter.tsx — Enhanced Word-like editor
- * Additional installs needed:
- *   npm install @tiptap/extension-text-align @tiptap/extension-underline
- *   (already in package.json — verify they are)
- *
- * Optional for per-selection font/color:
- *   npm install @tiptap/extension-text-style @tiptap/extension-color
- *   @tiptap/extension-highlight @tiptap/extension-font-family
- */
-
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Underline from '@tiptap/extension-underline';
+import { Color } from '@tiptap/extension-color';
+import { TextStyle } from '@tiptap/extension-text-style';
+import Highlight from '@tiptap/extension-highlight';
+import TiptapLink from '@tiptap/extension-link';
+import { Table as TiptapTable } from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableCell from '@tiptap/extension-table-cell';
+import TableHeader from '@tiptap/extension-table-header';
+import Subscript from '@tiptap/extension-subscript';
+import Superscript from '@tiptap/extension-superscript';
 import {
     DndContext, closestCenter, KeyboardSensor,
     PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -30,11 +29,18 @@ import {
     Quote, Undo, Redo, CheckCircle, BookOpen,
     Strikethrough, Code, Minus, PanelLeftClose, PanelLeftOpen,
     FileText, AlignLeft, AlignCenter, AlignRight, AlignJustify,
-    Underline as UnderlineIcon, Search, Printer, ZoomIn, ZoomOut,
+    Clock, Underline as UnderlineIcon, Search, Printer, ZoomIn, ZoomOut,
     IndentDecrease as OutdentIcon, IndentIncrease as IndentIcon,
     X, ChevronDown, Replace, ChevronUp, CornerDownLeft,
+    Subscript as SubscriptIcon, Superscript as SuperscriptIcon,
+    Link2, Link2Off, LayoutGrid, Highlighter,
+    Maximize2, Minimize2, Eye, EyeOff, Timer, Target,
+    Play, Pause, RotateCcw, Download, Copy,
+    Bookmark, BookmarkPlus, Hash, Sun, Moon,
+    Filter,
+    Type as TypeIcon,
 } from 'lucide-react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import ConfirmModal from '../components/ConfirmModal';
@@ -42,120 +48,187 @@ import ConfirmModal from '../components/ConfirmModal';
 const getApiBase = () => import.meta.env.VITE_API_URL || 'https://api-dp2f6yjbbq-el.a.run.app';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const RULER_SIZE   = 22;   // px — thickness of rulers
-const PAGE_GAP     = 32;   // px — gap between pages
-const PAGE_PAD_H   = 48;   // px — horizontal padding around page
-const PAGE_PAD_V   = 32;   // px — vertical padding top/bottom of scroll area
+const RULER_SIZE = 22;
+const PAGE_GAP   = 32;
 
-// A4 at 96dpi — widened for comfortable writing
-const A4_W_PX = 960;
-const A4_H_PX = 1123;
+const PAPER_SIZES = {
+    A4:     { width: 960,  height: 1123 },
+    Letter: { width: 990,  height: 1280 },
+    Legal:  { width: 990,  height: 1634 },
+} as const;
 
-// Margins (px @ 100%)
-const M_TOP    = 80;  // ~0.83 inch
+const DENSITY_CONFIG = {
+    compact:     { padH: 24, padV: 16 },
+    comfortable: { padH: 48, padV: 32 },
+    spacious:    { padH: 80, padV: 64 },
+} as const;
+
+const CANVAS_COLORS = {
+    dark:  '#1e1e2a',
+    light: '#bbbbc8',
+    sepia: '#b0a080',
+} as const;
+
+const PAGE_BG_COLORS = {
+    white: '#ffffff',
+    sepia: '#fdf6e3',
+    gray:  '#f5f5f5',
+} as const;
+
+const M_TOP    = 80;
 const M_BOTTOM = 80;
-const M_LEFT   = 90;  // ~0.94 inch
+const M_LEFT   = 90;
 const M_RIGHT  = 90;
 
 const FONTS = [
-    { label: 'Georgia',      value: 'Georgia, serif' },
+    { label: 'Georgia',         value: 'Georgia, serif' },
     { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
-    { label: 'Palatino',     value: '"Palatino Linotype", Palatino, serif' },
-    { label: 'Arial',        value: 'Arial, sans-serif' },
-    { label: 'Calibri',      value: 'Calibri, sans-serif' },
-    { label: 'Helvetica',    value: 'Helvetica, Arial, sans-serif' },
-    { label: 'Courier New',  value: '"Courier New", Courier, monospace' },
-    { label: 'Consolas',     value: 'Consolas, monospace' },
+    { label: 'Palatino',        value: '"Palatino Linotype", Palatino, serif' },
+    { label: 'Arial',           value: 'Arial, sans-serif' },
+    { label: 'Calibri',         value: 'Calibri, sans-serif' },
+    { label: 'Helvetica',       value: 'Helvetica, Arial, sans-serif' },
+    { label: 'Courier New',     value: '"Courier New", Courier, monospace' },
+    { label: 'Consolas',        value: 'Consolas, monospace' },
 ];
-const FONT_SIZES = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72];
+const FONT_SIZES   = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 60, 72];
 const LINE_SPACINGS = [
-    { label: 'Single',  value: 1.15 },
-    { label: '1.5',     value: 1.5  },
-    { label: 'Double',  value: 2.0  },
-    { label: '2.5',     value: 2.5  },
+    { label: 'Single', value: 1.15 },
+    { label: '1.5',    value: 1.5  },
+    { label: 'Double', value: 2.0  },
+    { label: '2.5',    value: 2.5  },
 ];
 
+const TEXT_COLORS = [
+    '#000000','#374151','#6B7280','#9CA3AF','#FFFFFF',
+    '#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#EC4899',
+    '#DC2626','#D97706','#15803D','#1D4ED8','#7C3AED','#BE185D',
+    '#FCA5A5','#FDE68A','#A7F3D0','#BFDBFE','#DDD6FE','#FBCFE8',
+];
+const HIGHLIGHT_COLORS = [
+    'transparent',
+    '#FEF08A','#BBF7D0','#BFDBFE','#FCA5A5','#DDD6FE',
+    '#FDE68A','#CFFAFE','#FCE7F3','#D1FAE5',
+];
+const CHAPTER_COLORS = ['#6B7280','#EF4444','#F97316','#EAB308','#22C55E','#3B82F6','#8B5CF6','#EC4899'];
+
+const STATUS_CONFIG = {
+    draft:           { label: 'Draft',           dot: '#6B7280', bg: 'bg-gray-500/15',  text: 'text-gray-400' },
+    'in-progress':   { label: 'In Progress',     dot: '#3B82F6', bg: 'bg-blue-500/15',  text: 'text-blue-400' },
+    done:            { label: 'Done',             dot: '#22C55E', bg: 'bg-green-500/15', text: 'text-green-400' },
+    'needs-revision':{ label: 'Needs Revision',  dot: '#F59E0B', bg: 'bg-amber-500/15', text: 'text-amber-400' },
+} as const;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface Chapter { id: string; title: string; content: string; order: number; }
-interface Book    { id: string; title: string; chapters: Chapter[]; }
+type PaperSize  = 'A4' | 'Letter' | 'Legal';
+type Theme      = 'dark' | 'light' | 'sepia';
+type PageColor  = 'white' | 'sepia' | 'gray';
+type Density    = 'compact' | 'comfortable' | 'spacious';
+type ChapterStatus = keyof typeof STATUS_CONFIG;
+
+interface Chapter {
+    id: string; title: string; content: string; order: number;
+    isDeleted?: boolean; status?: ChapterStatus; synopsis?: string; color?: string;
+}
+interface Book { id: string; title: string; chapters: Chapter[]; }
+interface Bookmark { id: string; label: string; chapterId: string; scrollPos: number; }
+interface ChapterMeta { status: ChapterStatus; synopsis: string; color: string; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const countWords = (html: string) => {
     const t = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     return t ? t.split(' ').filter(Boolean).length : 0;
 };
+const countChars = (html: string) => html.replace(/<[^>]*>/g, '').replace(/\s/g, '').length;
+const countSentences = (html: string) => {
+    const t = html.replace(/<[^>]*>/g, ' ').trim();
+    return (t.match(/[.!?]+/g) || []).length || (t ? 1 : 0);
+};
 const fmtWords = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n);
+
+const syllableCount = (word: string): number => {
+    word = word.toLowerCase().replace(/[^a-z]/g, '');
+    if (word.length <= 3) return 1;
+    let count = 0; let prevVowel = false;
+    for (const ch of word) { const v = 'aeiouy'.includes(ch); if (v && !prevVowel) count++; prevVowel = v; }
+    if (word.endsWith('e')) count--;
+    return Math.max(1, count);
+};
+
+const getReadingLevel = (html: string): string => {
+    const text  = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const words = text.split(/\s+/).filter(Boolean);
+    if (!words.length) return '—';
+    const sentences = Math.max(1, (text.match(/[.!?]+/g) || []).length);
+    const syllables = words.reduce((s, w) => s + syllableCount(w), 0);
+    const fre = 206.835 - 1.015 * (words.length / sentences) - 84.6 * (syllables / words.length);
+    if (fre >= 90) return '5th Gr.';
+    if (fre >= 80) return '6th Gr.';
+    if (fre >= 70) return '7th Gr.';
+    if (fre >= 60) return '8–9th Gr.';
+    if (fre >= 50) return '10–12th Gr.';
+    if (fre >= 30) return 'College';
+    return 'Graduate';
+};
+
+const htmlToMarkdown = (html: string): string =>
+    html
+        .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '# $1\n\n')
+        .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+        .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+        .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+        .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+        .replace(/<u[^>]*>(.*?)<\/u>/gi, '__$1__')
+        .replace(/<s[^>]*>(.*?)<\/s>/gi, '~~$1~~')
+        .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+        .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, '> $1\n\n')
+        .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+        .replace(/<hr[^>]*>/gi, '---\n\n')
+        .replace(/<br[^>]*>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/\n{3,}/g, '\n\n').trim();
+
+const downloadBlob = (content: string, filename: string, mime: string) => {
+    const blob = new Blob([content], { type: mime });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+};
 
 // ── Ruler: Horizontal ─────────────────────────────────────────────────────────
 const HorizontalRuler = ({
-    scrollLeft, zoom, contentWidth,
-}: { scrollLeft: number; zoom: number; contentWidth: number }) => {
-    const scale = zoom / 100;
-    const inchPx = 96 * scale;
-    const totalW = contentWidth;
-    const pageStartX = PAGE_PAD_H; // where the page starts in the scroll area
-    const marginLeftPx  = M_LEFT  * scale;
-    const marginRightPx = M_RIGHT * scale;
-    const pageWidthPx   = A4_W_PX * scale;
+    scrollLeft, zoom, contentWidth, pagePadH, paperSize,
+}: { scrollLeft: number; zoom: number; contentWidth: number; pagePadH: number; paperSize: PaperSize }) => {
+    const scale     = zoom / 100;
+    const inchPx    = 96 * scale;
+    const pageW     = PAPER_SIZES[paperSize].width * scale;
+    const marginL   = M_LEFT  * scale;
+    const marginR   = M_RIGHT * scale;
 
     const ticks: { x: number; type: 'inch' | 'half' | 'quarter' | 'small'; label?: string }[] = [];
-    const step = inchPx / 8; // 1/8 inch increments
-    for (let i = 0; i * step <= totalW + inchPx; i++) {
+    const step = inchPx / 8;
+    for (let i = 0; i * step <= contentWidth + inchPx; i++) {
         const x = i * step;
-        const isInch    = i % 8 === 0;
-        const isHalf    = i % 4 === 0 && !isInch;
-        const isQuarter = i % 2 === 0 && !isHalf && !isInch;
-        ticks.push({
-            x,
-            type:  isInch ? 'inch' : isHalf ? 'half' : isQuarter ? 'quarter' : 'small',
-            label: isInch ? String(i / 8) : undefined,
-        });
+        const isInch = i % 8 === 0; const isHalf = i % 4 === 0 && !isInch; const isQ = i % 2 === 0 && !isHalf && !isInch;
+        ticks.push({ x, type: isInch ? 'inch' : isHalf ? 'half' : isQ ? 'quarter' : 'small', label: isInch ? String(i / 8) : undefined });
     }
 
     return (
-        <div
-            className="flex-shrink-0 bg-[#12121f] border-b border-white/[0.07] relative overflow-hidden select-none"
-            style={{ height: RULER_SIZE, width: '100%' }}
-        >
-            {/* Margin shading: left */}
-            <div
-                className="absolute top-0 bottom-0 bg-[#0a0a16]"
-                style={{ left: pageStartX - scrollLeft, width: marginLeftPx }}
-            />
-            {/* Margin shading: right */}
-            <div
-                className="absolute top-0 bottom-0 bg-[#0a0a16]"
-                style={{ left: pageStartX - scrollLeft + pageWidthPx - marginRightPx, width: marginRightPx }}
-            />
-            {/* Margin boundary lines */}
-            <div className="absolute top-0 bottom-0 w-px bg-cyan-500/40"
-                style={{ left: pageStartX - scrollLeft + marginLeftPx }} />
-            <div className="absolute top-0 bottom-0 w-px bg-cyan-500/40"
-                style={{ left: pageStartX - scrollLeft + pageWidthPx - marginRightPx }} />
-
-            {/* Ticks */}
+        <div className="flex-shrink-0 bg-[#12121f] border-b border-white/[0.07] relative overflow-hidden select-none" style={{ height: RULER_SIZE }}>
+            <div className="absolute top-0 bottom-0 bg-[#0a0a16]" style={{ left: pagePadH - scrollLeft, width: marginL }} />
+            <div className="absolute top-0 bottom-0 bg-[#0a0a16]" style={{ left: pagePadH - scrollLeft + pageW - marginR, width: marginR }} />
+            <div className="absolute top-0 bottom-0 w-px bg-cyan-500/40" style={{ left: pagePadH - scrollLeft + marginL }} />
+            <div className="absolute top-0 bottom-0 w-px bg-cyan-500/40" style={{ left: pagePadH - scrollLeft + pageW - marginR }} />
             {ticks.map((t) => (
-                <div
-                    key={t.x}
-                    className="absolute bottom-0"
-                    style={{ left: t.x - scrollLeft }}
-                >
-                    <div
-                        className="absolute bottom-0 left-0 w-px"
-                        style={{
-                            height: t.type === 'inch' ? 13 : t.type === 'half' ? 9 : t.type === 'quarter' ? 6 : 4,
-                            background: t.type === 'inch' ? 'rgba(255,255,255,0.45)'
-                                       : t.type === 'half' ? 'rgba(255,255,255,0.25)'
-                                       : 'rgba(255,255,255,0.12)',
-                        }}
-                    />
+                <div key={t.x} className="absolute bottom-0" style={{ left: t.x - scrollLeft }}>
+                    <div className="absolute bottom-0 left-0 w-px" style={{
+                        height: t.type === 'inch' ? 13 : t.type === 'half' ? 9 : t.type === 'quarter' ? 6 : 4,
+                        background: t.type === 'inch' ? 'rgba(255,255,255,0.45)' : t.type === 'half' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                    }} />
                     {t.label && t.label !== '0' && (
-                        <span
-                            className="absolute text-[8px] text-gray-600 font-mono"
-                            style={{ bottom: 12, left: 2, lineHeight: 1 }}
-                        >
-                            {t.label}
-                        </span>
+                        <span className="absolute text-[8px] text-gray-600 font-mono" style={{ bottom: 12, left: 2, lineHeight: 1 }}>{t.label}</span>
                     )}
                 </div>
             ))}
@@ -164,202 +237,267 @@ const HorizontalRuler = ({
 };
 
 // ── Ruler: Vertical ───────────────────────────────────────────────────────────
-const VerticalRuler = ({
-    scrollTop, zoom, height,
-}: { scrollTop: number; zoom: number; height: number }) => {
-    const scale = zoom / 100;
-    const inchPx = 96 * scale;
-    const step = inchPx / 8;
-
+const VerticalRuler = ({ scrollTop, zoom, height, pagePadV }: { scrollTop: number; zoom: number; height: number; pagePadV: number }) => {
+    const scale = zoom / 100; const inchPx = 96 * scale; const step = inchPx / 8;
     const ticks: { y: number; type: 'inch' | 'half' | 'quarter' | 'small'; label?: string }[] = [];
     for (let i = 0; i * step <= height + inchPx; i++) {
-        const y = i * step + PAGE_PAD_V;
-        const isInch    = i % 8 === 0;
-        const isHalf    = i % 4 === 0 && !isInch;
-        const isQuarter = i % 2 === 0 && !isHalf && !isInch;
-        ticks.push({
-            y,
-            type:  isInch ? 'inch' : isHalf ? 'half' : isQuarter ? 'quarter' : 'small',
-            label: isInch ? String(i / 8) : undefined,
-        });
+        const y = i * step + pagePadV; const isInch = i % 8 === 0; const isHalf = i % 4 === 0 && !isInch; const isQ = i % 2 === 0 && !isHalf && !isInch;
+        ticks.push({ y, type: isInch ? 'inch' : isHalf ? 'half' : isQ ? 'quarter' : 'small', label: isInch ? String(i / 8) : undefined });
     }
-
     return (
-        <div
-            className="flex-shrink-0 bg-[#12121f] border-r border-white/[0.07] relative overflow-hidden select-none"
-            style={{ width: RULER_SIZE, minHeight: '100%' }}
-        >
+        <div className="flex-shrink-0 bg-[#12121f] border-r border-white/[0.07] relative overflow-hidden select-none" style={{ width: RULER_SIZE, minHeight: '100%' }}>
             {ticks.map((t) => (
-                <div
-                    key={t.y}
-                    className="absolute right-0"
-                    style={{ top: t.y - scrollTop }}
-                >
-                    <div
-                        className="absolute right-0 top-0 h-px"
-                        style={{
-                            width: t.type === 'inch' ? 13 : t.type === 'half' ? 9 : t.type === 'quarter' ? 6 : 4,
-                            background: t.type === 'inch' ? 'rgba(255,255,255,0.45)'
-                                       : t.type === 'half' ? 'rgba(255,255,255,0.25)'
-                                       : 'rgba(255,255,255,0.12)',
-                        }}
-                    />
-                    {t.label && t.label !== '0' && (
-                        <span
-                            className="absolute text-[8px] text-gray-600 font-mono"
-                            style={{ top: 2, right: 12, lineHeight: 1 }}
-                        >
-                            {t.label}
-                        </span>
-                    )}
+                <div key={t.y} className="absolute right-0" style={{ top: t.y - scrollTop }}>
+                    <div className="absolute right-0 top-0 h-px" style={{
+                        width: t.type === 'inch' ? 13 : t.type === 'half' ? 9 : t.type === 'quarter' ? 6 : 4,
+                        background: t.type === 'inch' ? 'rgba(255,255,255,0.45)' : t.type === 'half' ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.12)',
+                    }} />
+                    {t.label && t.label !== '0' && <span className="absolute text-[8px] text-gray-600 font-mono" style={{ top: 2, right: 12, lineHeight: 1 }}>{t.label}</span>}
                 </div>
             ))}
         </div>
     );
 };
 
-// ── Ruler: Right (thin mirror) ────────────────────────────────────────────────
-const RightRuler = ({
-    scrollTop, zoom, height,
-}: { scrollTop: number; zoom: number; height: number }) => {
-    const scale = zoom / 100;
-    const inchPx = 96 * scale;
-    const step = inchPx / 4; // only half-inch ticks on right
-
+// ── Ruler: Right ──────────────────────────────────────────────────────────────
+const RightRuler = ({ scrollTop, zoom, height, pagePadV }: { scrollTop: number; zoom: number; height: number; pagePadV: number }) => {
+    const scale = zoom / 100; const inchPx = 96 * scale; const step = inchPx / 4;
     const ticks: { y: number; type: 'inch' | 'half' }[] = [];
     for (let i = 0; i * step <= height + inchPx; i++) {
-        const y = i * step + PAGE_PAD_V;
-        const isInch = i % 4 === 0;
-        ticks.push({ y, type: isInch ? 'inch' : 'half' });
+        ticks.push({ y: i * step + pagePadV, type: i % 4 === 0 ? 'inch' : 'half' });
     }
-
     return (
-        <div
-            className="flex-shrink-0 bg-[#12121f] border-l border-white/[0.07] relative overflow-hidden select-none"
-            style={{ width: RULER_SIZE, minHeight: '100%' }}
-        >
+        <div className="flex-shrink-0 bg-[#12121f] border-l border-white/[0.07] relative overflow-hidden select-none" style={{ width: RULER_SIZE, minHeight: '100%' }}>
             {ticks.map((t) => (
-                <div
-                    key={t.y}
-                    className="absolute left-0"
-                    style={{ top: t.y - scrollTop }}
-                >
-                    <div
-                        className="absolute left-0 top-0 h-px"
-                        style={{
-                            width: t.type === 'inch' ? 10 : 6,
-                            background: t.type === 'inch' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
-                        }}
-                    />
+                <div key={t.y} className="absolute left-0" style={{ top: t.y - scrollTop }}>
+                    <div className="absolute left-0 top-0 h-px" style={{ width: t.type === 'inch' ? 10 : 6, background: t.type === 'inch' ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)' }} />
                 </div>
             ))}
         </div>
     );
 };
 
-// ── Toolbar Button ────────────────────────────────────────────────────────────
-const TBtn = ({
-    onClick, active = false, disabled = false, title, children, size = 'md',
-}: {
+// ── Toolbar Atoms ─────────────────────────────────────────────────────────────
+const TBtn = ({ onClick, active = false, disabled = false, title, children, size = 'md', danger = false }: {
     onClick: () => void; active?: boolean; disabled?: boolean;
-    title: string; children: React.ReactNode; size?: 'sm' | 'md';
+    title: string; children: React.ReactNode; size?: 'sm' | 'md'; danger?: boolean;
 }) => (
-    <button
-        type="button"
-        onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-        disabled={disabled}
-        title={title}
+    <button type="button" onMouseDown={(e) => { e.preventDefault(); onClick(); }} disabled={disabled} title={title}
         className={clsx(
             'rounded transition-all duration-100 flex items-center justify-center flex-shrink-0',
             size === 'sm' ? 'p-1' : 'p-1.5',
-            active
-                ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                : 'text-gray-500 hover:text-white hover:bg-white/10 border border-transparent',
+            active  ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+            : danger ? 'text-red-500/70 hover:text-red-400 hover:bg-red-500/10 border border-transparent'
+            : 'text-gray-500 hover:text-white hover:bg-white/10 border border-transparent',
             disabled && 'opacity-25 cursor-not-allowed pointer-events-none',
-        )}
-    >
+        )}>
         {children}
     </button>
 );
-
 const TDivider = () => <div className="w-px h-4 bg-white/10 mx-0.5 flex-shrink-0" />;
 
-// ── Dropdown ──────────────────────────────────────────────────────────────────
-const TDropdown = ({
-    value, options, onChange, width = 90, title,
-}: {
+const TDropdown = ({ value, options, onChange, width = 90, title }: {
     value: string; options: { label: string; value: string | number }[];
     onChange: (v: string) => void; width?: number; title?: string;
 }) => (
     <div className="relative flex-shrink-0" title={title}>
-        <select
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onMouseDown={(e) => e.stopPropagation()}
+        <select value={value} onChange={(e) => onChange(e.target.value)} onMouseDown={(e) => e.stopPropagation()}
             className="appearance-none bg-white/[0.05] border border-white/[0.08] text-gray-300 text-xs rounded px-2 pr-5 h-7 cursor-pointer hover:border-white/20 transition-colors focus:outline-none focus:border-cyan-500/40"
-            style={{ width }}
-        >
-            {options.map((o) => (
-                <option key={o.value} value={o.value} className="bg-[#0d0d1a]">
-                    {o.label}
-                </option>
-            ))}
+            style={{ width }}>
+            {options.map((o) => <option key={o.value} value={o.value} className="bg-[#0d0d1a]">{o.label}</option>)}
         </select>
         <ChevronDown size={10} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none" />
     </div>
 );
 
+// ── Color Swatch Popover ──────────────────────────────────────────────────────
+const ColorSwatch = ({ colors, onSelect, onClose, title, transparent = false }: {
+    colors: string[]; onSelect: (c: string | null) => void; onClose: () => void;
+    title: string; transparent?: boolean;
+}) => (
+    <div className="absolute z-50 top-full mt-1 p-2.5 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl" style={{ width: 176 }}
+        onMouseDown={(e) => e.stopPropagation()}>
+        <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2">{title}</p>
+        <div className="grid grid-cols-8 gap-1">
+            {colors.map((c) => (
+                <button key={c} onClick={() => { onSelect(c === 'transparent' ? null : c); onClose(); }}
+                    className={clsx('w-4 h-4 rounded-sm border border-white/10 hover:scale-125 transition-transform', c === 'transparent' && 'relative overflow-hidden')}
+                    style={{ backgroundColor: c === 'transparent' ? 'transparent' : c }}
+                    title={c}>
+                    {c === 'transparent' && <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 0.5px), #ef4444 calc(50% - 0.5px), #ef4444 calc(50% + 0.5px), transparent calc(50% + 0.5px))' }} />}
+                </button>
+            ))}
+        </div>
+        {transparent && (
+            <button onClick={() => { onSelect(null); onClose(); }}
+                className="mt-2 w-full text-[10px] text-gray-600 hover:text-gray-300 transition-colors py-0.5 rounded hover:bg-white/5">
+                Clear
+            </button>
+        )}
+    </div>
+);
+
+// ── Link Dialog ───────────────────────────────────────────────────────────────
+const LinkDialog = ({ editor, onClose }: { editor: ReturnType<typeof useEditor>; onClose: () => void }) => {
+    const existing = editor?.getAttributes('link').href || '';
+    const [url, setUrl] = useState(existing || 'https://');
+    const inputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => { inputRef.current?.focus(); inputRef.current?.select(); }, []);
+
+    const handleSet = () => {
+        if (!editor) return;
+        if (url && url !== 'https://') editor.chain().focus().setLink({ href: url, target: '_blank' }).run();
+        else editor.chain().focus().unsetLink().run();
+        onClose();
+    };
+    const handleRemove = () => { editor?.chain().focus().unsetLink().run(); onClose(); };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onMouseDown={onClose}>
+            <div className="bg-[#0d0d1a] border border-white/10 rounded-2xl p-5 w-80 shadow-2xl" onMouseDown={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-white">Insert / Edit Link</h3>
+                    <button onClick={onClose} className="text-gray-600 hover:text-gray-300"><X size={14} /></button>
+                </div>
+                <input ref={inputRef} value={url} onChange={(e) => setUrl(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleSet(); if (e.key === 'Escape') onClose(); }}
+                    placeholder="https://..."
+                    className="w-full bg-white/[0.05] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-cyan-500/40 mb-3 placeholder:text-gray-700" />
+                <div className="flex gap-2">
+                    {existing && <button onClick={handleRemove} className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-medium rounded-lg border border-red-500/20 transition-colors">Remove</button>}
+                    <button onClick={onClose} className="flex-1 py-2 bg-white/[0.05] hover:bg-white/10 text-gray-400 text-xs font-medium rounded-lg border border-white/[0.08] transition-colors">Cancel</button>
+                    <button onClick={handleSet} className="flex-1 py-2 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 text-xs font-medium rounded-lg border border-cyan-500/25 transition-colors">Apply</button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ── Table Insert Popover ──────────────────────────────────────────────────────
+const TableInsertPopover = ({ editor, onClose }: { editor: ReturnType<typeof useEditor>; onClose: () => void }) => {
+    const [rows, setRows] = useState(3);
+    const [cols, setCols] = useState(3);
+    const [hovered, setHovered] = useState<[number, number]>([3, 3]);
+
+    const insert = (r: number, c: number) => {
+        editor?.chain().focus().insertTable({ rows: r, cols: c, withHeaderRow: true }).run();
+        onClose();
+    };
+
+    return (
+        <div className="absolute z-50 top-full mt-1 p-3 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl"
+            onMouseDown={(e) => e.stopPropagation()}>
+            <p className="text-[9px] text-gray-600 uppercase tracking-wider mb-2">
+                {hovered[0]}×{hovered[1]} Table
+            </p>
+            <div className="grid gap-0.5" style={{ gridTemplateColumns: 'repeat(8, 1fr)' }}>
+                {Array.from({ length: 8 * 8 }, (_, i) => {
+                    const r = Math.floor(i / 8) + 1; const c = (i % 8) + 1;
+                    const active = r <= hovered[0] && c <= hovered[1];
+                    return (
+                        <button key={i} className={clsx('w-4 h-4 border rounded-sm transition-colors', active ? 'bg-cyan-500/40 border-cyan-500/60' : 'bg-white/[0.04] border-white/10 hover:bg-white/10')}
+                            onMouseEnter={() => setHovered([r, c])}
+                            onClick={() => insert(r, c)} />
+                    );
+                })}
+            </div>
+            <div className="flex gap-1.5 mt-2">
+                <input type="number" min={1} max={20} value={rows} onChange={(e) => setRows(+e.target.value)}
+                    className="w-12 bg-white/[0.05] border border-white/[0.08] text-xs text-white rounded px-1.5 py-1 outline-none focus:border-cyan-500/40 text-center" />
+                <span className="text-gray-600 text-xs self-center">×</span>
+                <input type="number" min={1} max={20} value={cols} onChange={(e) => setCols(+e.target.value)}
+                    className="w-12 bg-white/[0.05] border border-white/[0.08] text-xs text-white rounded px-1.5 py-1 outline-none focus:border-cyan-500/40 text-center" />
+                <button onClick={() => insert(rows, cols)} className="flex-1 px-2 py-1 bg-cyan-500/15 text-cyan-400 text-xs rounded border border-cyan-500/20 hover:bg-cyan-500/25 transition-colors">Insert</button>
+            </div>
+        </div>
+    );
+};
+
+// ── TOC Panel ─────────────────────────────────────────────────────────────────
+const TOCPanel = ({ editor, onClose, scrollAreaRef }: {
+    editor: ReturnType<typeof useEditor>; onClose: () => void;
+    scrollAreaRef: React.RefObject<HTMLDivElement | null>;
+}) => {
+    const headings = useMemo(() => {
+        if (!editor) return [];
+        const items: { level: number; text: string; pos: number }[] = [];
+        editor.state.doc.descendants((node, pos) => {
+            if (node.type.name === 'heading') {
+                items.push({ level: node.attrs.level, text: node.textContent, pos });
+            }
+        });
+        return items;
+    }, [editor?.state.doc]);
+
+    const jumpTo = (pos: number) => {
+        if (!editor) return;
+        editor.chain().focus().setTextSelection(pos + 1).run();
+        try {
+            const coords = editor.view.coordsAtPos(pos + 1);
+            const el = scrollAreaRef.current;
+            if (el) {
+                const rect = el.getBoundingClientRect();
+                const relY = coords.top - rect.top + el.scrollTop;
+                el.scrollTo({ top: Math.max(0, relY - 80), behavior: 'smooth' });
+            }
+        } catch {}
+        onClose();
+    };
+
+    return (
+        <div className="absolute right-0 top-0 bottom-0 z-40 w-64 bg-[#09090f] border-l border-white/[0.06] flex flex-col shadow-2xl">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.06]">
+                <span className="text-xs font-semibold text-white">Table of Contents</span>
+                <button onClick={onClose} className="text-gray-600 hover:text-gray-300"><X size={13} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/10">
+                {headings.length === 0 ? (
+                    <p className="text-[11px] text-gray-700 text-center py-8">No headings found.<br />Use H1 / H2 to create sections.</p>
+                ) : headings.map((h, i) => (
+                    <button key={i} onClick={() => jumpTo(h.pos)}
+                        className="w-full text-left py-1.5 px-2 rounded-lg hover:bg-white/[0.05] text-gray-400 hover:text-white transition-colors group flex items-center gap-2"
+                        style={{ paddingLeft: (h.level - 1) * 12 + 8 }}>
+                        <Hash size={9} className="text-gray-700 group-hover:text-cyan-500/60 flex-shrink-0" />
+                        <span className={clsx('text-xs leading-tight truncate', h.level === 1 ? 'font-semibold' : h.level === 2 ? 'font-medium' : 'font-normal')}>{h.text}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 // ── Find & Replace Panel ──────────────────────────────────────────────────────
-const FindReplacePanel = ({
-    editor, onClose,
-}: { editor: ReturnType<typeof useEditor>; onClose: () => void }) => {
+const FindReplacePanel = ({ editor, onClose }: { editor: ReturnType<typeof useEditor>; onClose: () => void }) => {
     const [find, setFind]       = useState('');
     const [replace, setReplace] = useState('');
     const [showReplace, setShowReplace] = useState(false);
     const [matchCount, setMatchCount]   = useState(0);
     const [matchIdx, setMatchIdx]       = useState(0);
     const findRef = useRef<HTMLInputElement>(null);
-
     useEffect(() => { findRef.current?.focus(); }, []);
 
-    // Get all text match positions from the editor's DOM
     const findMatches = useCallback((term: string) => {
         if (!term || !editor) return [];
-        const text = editor.getText();
-        const positions: number[] = [];
-        let idx = 0;
-        const lower = text.toLowerCase();
-        const tLower = term.toLowerCase();
-        while ((idx = lower.indexOf(tLower, idx)) !== -1) {
-            positions.push(idx);
-            idx += term.length;
-        }
+        const text = editor.getText(); const positions: number[] = []; let idx = 0;
+        const lower = text.toLowerCase(); const tLower = term.toLowerCase();
+        while ((idx = lower.indexOf(tLower, idx)) !== -1) { positions.push(idx); idx += term.length; }
         return positions;
     }, [editor]);
 
-    useEffect(() => {
-        const matches = findMatches(find);
-        setMatchCount(matches.length);
-        setMatchIdx(matches.length > 0 ? 1 : 0);
-    }, [find, findMatches]);
+    useEffect(() => { const m = findMatches(find); setMatchCount(m.length); setMatchIdx(m.length > 0 ? 1 : 0); }, [find, findMatches]);
 
     const doFind = (direction: 1 | -1) => {
         if (!editor || !find) return;
-        const matches = findMatches(find);
-        if (!matches.length) return;
+        const matches = findMatches(find); if (!matches.length) return;
         const newIdx = ((matchIdx - 1 + direction + matches.length) % matches.length);
         setMatchIdx(newIdx + 1);
-
-        // Select in editor
-        const pos = matches[newIdx];
-        editor.chain().focus().setTextSelection({ from: pos + 1, to: pos + find.length + 1 }).run();
+        editor.chain().focus().setTextSelection({ from: matches[newIdx] + 1, to: matches[newIdx] + find.length + 1 }).run();
     };
 
     const doReplace = () => {
         if (!editor || !find) return;
         const { from, to } = editor.state.selection;
-        const sel = editor.state.doc.textBetween(from, to);
-        if (sel.toLowerCase() === find.toLowerCase()) {
+        if (editor.state.doc.textBetween(from, to).toLowerCase() === find.toLowerCase()) {
             editor.chain().focus().insertContent(replace).run();
         }
         doFind(1);
@@ -367,76 +505,55 @@ const FindReplacePanel = ({
 
     const doReplaceAll = () => {
         if (!editor || !find) return;
-        const html = editor.getHTML();
         const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
-        const newHtml = html.replace(regex, replace);
-        editor.commands.setContent(newHtml);
-        toast.success(`Replaced all occurrences`);
-        onClose();
+        editor.commands.setContent(editor.getHTML().replace(regex, replace));
+        toast.success('Replaced all occurrences'); onClose();
     };
 
     return (
         <div className="flex flex-col gap-2 px-4 py-2.5 bg-[#0d0d1a] border-b border-white/[0.06] shadow-xl">
             <div className="flex items-center gap-2">
-                <button onClick={() => setShowReplace(!showReplace)}
-                    className="text-gray-500 hover:text-gray-300 transition-colors">
-                    <ChevronDown size={12} className={clsx('transition-transform', showReplace && 'rotate-0', !showReplace && '-rotate-90')} />
+                <button onClick={() => setShowReplace(!showReplace)} className="text-gray-500 hover:text-gray-300">
+                    <ChevronDown size={12} className={clsx('transition-transform', !showReplace && '-rotate-90')} />
                 </button>
-
-                {/* Find row */}
                 <div className="flex items-center gap-1.5 flex-1">
                     <Search size={12} className="text-gray-600 flex-shrink-0" />
-                    <input
-                        ref={findRef}
-                        value={find}
-                        onChange={(e) => setFind(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter') doFind(e.shiftKey ? -1 : 1);
-                            if (e.key === 'Escape') onClose();
-                        }}
+                    <input ref={findRef} value={find} onChange={(e) => setFind(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') doFind(e.shiftKey ? -1 : 1); if (e.key === 'Escape') onClose(); }}
                         placeholder="Find…"
-                        className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2.5 h-7 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700"
-                    />
-                    <span className="text-[10px] text-gray-600 tabular-nums w-12 text-center flex-shrink-0">
-                        {find ? (matchCount ? `${matchIdx}/${matchCount}` : '0 found') : ''}
-                    </span>
-                    <TBtn onClick={() => doFind(-1)} title="Previous (Shift+Enter)" size="sm"><ChevronUp size={13} /></TBtn>
-                    <TBtn onClick={() => doFind(1)}  title="Next (Enter)"           size="sm"><ChevronDown size={13} /></TBtn>
+                        className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2.5 h-7 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700" />
+                    <span className="text-[10px] text-gray-600 tabular-nums w-12 text-center flex-shrink-0">{find ? (matchCount ? `${matchIdx}/${matchCount}` : '0 found') : ''}</span>
+                    <TBtn onClick={() => doFind(-1)} title="Previous" size="sm"><ChevronUp size={13} /></TBtn>
+                    <TBtn onClick={() => doFind(1)}  title="Next"     size="sm"><ChevronDown size={13} /></TBtn>
                 </div>
-                <button onClick={onClose} className="p-1 text-gray-600 hover:text-gray-300 transition-colors">
-                    <X size={13} />
-                </button>
+                <button onClick={onClose} className="p-1 text-gray-600 hover:text-gray-300"><X size={13} /></button>
             </div>
-
             {showReplace && (
                 <div className="flex items-center gap-1.5 pl-5">
                     <Replace size={12} className="text-gray-600 flex-shrink-0" />
-                    <input
-                        value={replace}
-                        onChange={(e) => setReplace(e.target.value)}
+                    <input value={replace} onChange={(e) => setReplace(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter') doReplace(); if (e.key === 'Escape') onClose(); }}
                         placeholder="Replace with…"
-                        className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2.5 h-7 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700"
-                    />
-                    <button onClick={doReplace}
-                        className="px-2.5 h-7 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-xs text-gray-300 rounded transition-colors whitespace-nowrap">
-                        Replace
-                    </button>
-                    <button onClick={doReplaceAll}
-                        className="px-2.5 h-7 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-xs text-cyan-400 rounded transition-colors whitespace-nowrap">
-                        Replace All
-                    </button>
+                        className="flex-1 bg-white/[0.05] border border-white/[0.08] rounded px-2.5 h-7 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700" />
+                    <button onClick={doReplace} className="px-2.5 h-7 bg-white/[0.05] hover:bg-white/10 border border-white/[0.08] text-xs text-gray-300 rounded transition-colors">Replace</button>
+                    <button onClick={doReplaceAll} className="px-2.5 h-7 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-xs text-cyan-400 rounded transition-colors">All</button>
                 </div>
             )}
         </div>
     );
 };
 
-// ── Editor Toolbar (2 rows) ───────────────────────────────────────────────────
+// ── Editor Toolbar ─────────────────────────────────────────────────────────────
 const EditorToolbar = ({
-    editor, zoom, setZoom, fontFamily, setFontFamily,
-    fontSize, setFontSize, lineSpacing, setLineSpacing,
-    showFind, setShowFind,
+    editor, zoom, setZoom, fontFamily, setFontFamily, fontSize, setFontSize,
+    lineSpacing, setLineSpacing, showFind, setShowFind,
+    theme, setTheme, density, setDensity, paperSize, setPaperSize,
+    pageColor, setPageColor, zenMode, setZenMode, focusMode, setFocusMode,
+    typewriterMode, setTypewriterMode, firstLineIndent, setFirstLineIndent,
+    dropCap, setDropCap, showTOC, setShowTOC,
+    pomodoroTime, pomodoroRunning, setPomodoroRunning, resetPomodoro,
+    wordGoal, setWordGoal, chapterWords,
+    onExportTxt, onExportMd, onCopyClipboard,
 }: {
     editor: ReturnType<typeof useEditor>;
     zoom: number; setZoom: (n: number) => void;
@@ -444,83 +561,118 @@ const EditorToolbar = ({
     fontSize: number; setFontSize: (n: number) => void;
     lineSpacing: number; setLineSpacing: (n: number) => void;
     showFind: boolean; setShowFind: (b: boolean) => void;
+    theme: Theme; setTheme: (t: Theme) => void;
+    density: Density; setDensity: (d: Density) => void;
+    paperSize: PaperSize; setPaperSize: (p: PaperSize) => void;
+    pageColor: PageColor; setPageColor: (c: PageColor) => void;
+    zenMode: boolean; setZenMode: (b: boolean) => void;
+    focusMode: boolean; setFocusMode: (b: boolean) => void;
+    typewriterMode: boolean; setTypewriterMode: (b: boolean) => void;
+    firstLineIndent: boolean; setFirstLineIndent: (b: boolean) => void;
+    dropCap: boolean; setDropCap: (b: boolean) => void;
+    showTOC: boolean; setShowTOC: (b: boolean) => void;
+    pomodoroTime: number; pomodoroRunning: boolean;
+    setPomodoroRunning: (b: boolean) => void; resetPomodoro: () => void;
+    wordGoal: number; setWordGoal: (n: number) => void; chapterWords: number;
+    onExportTxt: () => void; onExportMd: () => void; onCopyClipboard: () => void;
 }) => {
+    const [openPicker, setOpenPicker] = useState<'color' | 'highlight' | 'tableInsert' | 'export' | null>(null);
+    const [showLinkDialog, setShowLinkDialog] = useState(false);
+    const [editingGoal, setEditingGoal] = useState(false);
+    const [goalInput, setGoalInput] = useState(String(wordGoal));
+
     if (!editor) return null;
 
     const zoomStep = (dir: 1 | -1) => {
         const steps = [50, 60, 70, 75, 80, 90, 100, 110, 125, 150, 175, 200];
         const idx = steps.findIndex(z => z >= zoom);
-        const next = dir === 1
-            ? steps[Math.min(idx + 1, steps.length - 1)]
-            : steps[Math.max(idx - 2, 0)];
-        setZoom(next);
+        setZoom(dir === 1 ? steps[Math.min(idx + 1, steps.length - 1)] : steps[Math.max(idx - 2, 0)]);
     };
 
+    const pMin = Math.floor(pomodoroTime / 60);
+    const pSec = pomodoroTime % 60;
+    const goalPct = Math.min(100, Math.round((chapterWords / wordGoal) * 100));
+
     return (
-        <div className="border-b border-white/[0.06] bg-[#09090f] flex-shrink-0">
-            {/* Row 1: Clipboard / History / Font / Size */}
+        <>
+        {showLinkDialog && <LinkDialog editor={editor} onClose={() => setShowLinkDialog(false)} />}
+        <div className="border-b border-white/[0.06] bg-[#09090f] flex-shrink-0" onClick={() => setOpenPicker(null)}>
+
+            {/* ── Row 1: History · Font · Headings · Spacing · Zoom · Utilities ── */}
             <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-white/[0.04] flex-wrap">
-                <TBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo (Ctrl+Z)"><Undo size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Redo (Ctrl+Y)"><Redo size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().undo().run()} disabled={!editor.can().undo()} title="Undo"><Undo size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().redo().run()} disabled={!editor.can().redo()} title="Redo"><Redo size={13} /></TBtn>
                 <TDivider />
-
-                {/* Font family */}
-                <TDropdown
-                    value={fontFamily}
-                    options={FONTS.map(f => ({ label: f.label, value: f.value }))}
-                    onChange={setFontFamily}
-                    width={132}
-                    title="Font family"
-                />
+                <TDropdown value={fontFamily} options={FONTS.map(f => ({ label: f.label, value: f.value }))} onChange={setFontFamily} width={132} title="Font family" />
                 <div className="w-1" />
-                {/* Font size */}
-                <TDropdown
-                    value={String(fontSize)}
-                    options={FONT_SIZES.map(s => ({ label: String(s), value: s }))}
-                    onChange={(v) => setFontSize(Number(v))}
-                    width={56}
-                    title="Font size"
-                />
+                <TDropdown value={String(fontSize)} options={FONT_SIZES.map(s => ({ label: String(s), value: s }))} onChange={(v) => setFontSize(Number(v))} width={56} title="Font size" />
                 <TDivider />
-
-                {/* Heading shortcuts */}
                 <TBtn onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} active={editor.isActive('heading', { level: 1 })} title="Heading 1"><Heading1 size={13} /></TBtn>
                 <TBtn onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} active={editor.isActive('heading', { level: 2 })} title="Heading 2"><Heading2 size={13} /></TBtn>
                 <TDivider />
-
-                {/* Line spacing */}
-                <TDropdown
-                    value={String(lineSpacing)}
-                    options={LINE_SPACINGS.map(l => ({ label: l.label, value: l.value }))}
-                    onChange={(v) => setLineSpacing(Number(v))}
-                    width={74}
-                    title="Line spacing"
-                />
+                <TDropdown value={String(lineSpacing)} options={LINE_SPACINGS.map(l => ({ label: l.label, value: l.value }))} onChange={(v) => setLineSpacing(Number(v))} width={74} title="Line spacing" />
                 <TDivider />
-
-                {/* Zoom */}
                 <TBtn onClick={() => zoomStep(-1)} title="Zoom out"><ZoomOut size={13} /></TBtn>
                 <span className="text-[11px] text-gray-500 tabular-nums w-9 text-center">{zoom}%</span>
-                <TBtn onClick={() => zoomStep(1)}  title="Zoom in"><ZoomIn size={13} /></TBtn>
+                <TBtn onClick={() => zoomStep(1)} title="Zoom in"><ZoomIn size={13} /></TBtn>
                 <TDivider />
-
-                {/* Find */}
-                <TBtn onClick={() => setShowFind(!showFind)} active={showFind} title="Find & Replace (Ctrl+F)">
-                    <Search size={13} />
+                <TBtn onClick={() => setShowFind(!showFind)} active={showFind} title="Find & Replace (Ctrl+F)"><Search size={13} /></TBtn>
+                <TBtn onClick={() => window.print()} title="Print"><Printer size={13} /></TBtn>
+                <TBtn onClick={() => setShowTOC(!showTOC)} active={showTOC} title="Table of Contents"><Hash size={13} /></TBtn>
+                <TDivider />
+                {/* Theme */}
+                <TBtn onClick={() => setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'sepia' : 'dark')} title={`Canvas theme: ${theme}`}>
+                    {theme === 'dark' ? <Moon size={13} /> : theme === 'light' ? <Sun size={13} /> : <Eye size={13} />}
                 </TBtn>
-                {/* Print */}
-                <TBtn onClick={() => window.print()} title="Print (Ctrl+P)">
-                    <Printer size={13} />
+                {/* Zen mode */}
+                <TBtn onClick={() => setZenMode(!zenMode)} active={zenMode} title="Zen / distraction-free mode">
+                    {zenMode ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
                 </TBtn>
             </div>
 
-            {/* Row 2: Formatting */}
-            <div className="flex items-center gap-0.5 px-3 py-1.5 flex-wrap">
-                <TBtn onClick={() => editor.chain().focus().toggleBold().run()}   active={editor.isActive('bold')}      title="Bold (Ctrl+B)"><Bold size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive('italic')}    title="Italic (Ctrl+I)"><Italic size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().toggleUnderline?.() ? editor.chain().focus().toggleUnderline().run() : null} active={editor.isActive('underline')} title="Underline (Ctrl+U)"><UnderlineIcon size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().toggleStrike().run()} active={editor.isActive('strike')}    title="Strikethrough"><Strikethrough size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().toggleCode().run()}   active={editor.isActive('code')}      title="Inline code"><Code size={13} /></TBtn>
+            {/* ── Row 2: Inline formatting · Alignment · Lists · Misc ── */}
+            <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-white/[0.04] flex-wrap">
+                <TBtn onClick={() => editor.chain().focus().toggleBold().run()}       active={editor.isActive('bold')}       title="Bold"><Bold size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleItalic().run()}     active={editor.isActive('italic')}     title="Italic"><Italic size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleUnderline().run()}  active={editor.isActive('underline')}  title="Underline"><UnderlineIcon size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleStrike().run()}     active={editor.isActive('strike')}     title="Strikethrough"><Strikethrough size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleCode().run()}       active={editor.isActive('code')}       title="Inline code"><Code size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleSubscript().run()}  active={editor.isActive('subscript')}  title="Subscript"><SubscriptIcon size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleSuperscript().run()} active={editor.isActive('superscript')} title="Superscript"><SuperscriptIcon size={13} /></TBtn>
+                <TDivider />
+
+                {/* Text Color */}
+                <div className="relative flex-shrink-0">
+                    <TBtn onClick={() => setOpenPicker(openPicker === 'color' ? null : 'color')} active={openPicker === 'color'} title="Text color">
+                        <div className="flex flex-col items-center gap-0.5">
+                            <TypeIcon size={11} />
+                            <div className="w-3 h-0.5 rounded-full" style={{ backgroundColor: editor.getAttributes('textStyle').color || '#ffffff' }} />
+                        </div>
+                    </TBtn>
+                    {openPicker === 'color' && (
+                        <ColorSwatch colors={TEXT_COLORS} title="Text Color" transparent
+                            onSelect={(c) => c ? editor.chain().focus().setColor(c).run() : editor.chain().focus().unsetColor().run()}
+                            onClose={() => setOpenPicker(null)} />
+                    )}
+                </div>
+
+                {/* Highlight */}
+                <div className="relative flex-shrink-0">
+                    <TBtn onClick={() => setOpenPicker(openPicker === 'highlight' ? null : 'highlight')} active={openPicker === 'highlight'} title="Highlight">
+                        <Highlighter size={13} />
+                    </TBtn>
+                    {openPicker === 'highlight' && (
+                        <ColorSwatch colors={HIGHLIGHT_COLORS} title="Highlight Color" transparent
+                            onSelect={(c) => c ? editor.chain().focus().setHighlight({ color: c }).run() : editor.chain().focus().unsetHighlight().run()}
+                            onClose={() => setOpenPicker(null)} />
+                    )}
+                </div>
+
+                {/* Link */}
+                <TBtn onClick={() => setShowLinkDialog(true)} active={editor.isActive('link')} title="Insert / edit link"><Link2 size={13} /></TBtn>
+                {editor.isActive('link') && (
+                    <TBtn onClick={() => editor.chain().focus().unsetLink().run()} title="Remove link" danger><Link2Off size={13} /></TBtn>
+                )}
                 <TDivider />
 
                 {/* Alignment */}
@@ -534,64 +686,147 @@ const EditorToolbar = ({
                 <TBtn onClick={() => editor.chain().focus().toggleBulletList().run()}  active={editor.isActive('bulletList')}  title="Bullet list"><List size={13} /></TBtn>
                 <TBtn onClick={() => editor.chain().focus().toggleOrderedList().run()} active={editor.isActive('orderedList')} title="Numbered list"><ListOrdered size={13} /></TBtn>
                 <TBtn onClick={() => editor.chain().focus().toggleBlockquote().run()}  active={editor.isActive('blockquote')}  title="Blockquote"><Quote size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().toggleCodeBlock().run()}   active={editor.isActive('codeBlock')}   title="Code block">
-                    <span className="font-mono text-[10px] leading-none">{'{}'}</span>
-                </TBtn>
+                <TBtn onClick={() => editor.chain().focus().toggleCodeBlock().run()}   active={editor.isActive('codeBlock')}   title="Code block"><span className="font-mono text-[10px]">{'{}'}</span></TBtn>
                 <TDivider />
 
                 {/* Indent */}
-                <TBtn onClick={() => editor.chain().focus().liftListItem('listItem').run()}
-                    disabled={!editor.can().liftListItem('listItem')} title="Decrease indent">
-                    <OutdentIcon size={13} />
-                </TBtn>
-                <TBtn onClick={() => editor.chain().focus().sinkListItem('listItem').run()}
-                    disabled={!editor.can().sinkListItem('listItem')} title="Increase indent">
-                    <IndentIcon size={13} />
-                </TBtn>
+                <TBtn onClick={() => editor.chain().focus().liftListItem('listItem').run()} disabled={!editor.can().liftListItem('listItem')} title="Decrease indent"><OutdentIcon size={13} /></TBtn>
+                <TBtn onClick={() => editor.chain().focus().sinkListItem('listItem').run()} disabled={!editor.can().sinkListItem('listItem')} title="Increase indent"><IndentIcon size={13} /></TBtn>
                 <TDivider />
 
                 {/* Misc */}
                 <TBtn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Horizontal rule"><Minus size={13} /></TBtn>
-                <TBtn onClick={() => editor.chain().focus().setHardBreak().run()} title="Page break (visual)">
-                    <CornerDownLeft size={13} />
+                <TBtn onClick={() => editor.chain().focus().setHardBreak().run()} title="Hard break"><CornerDownLeft size={13} /></TBtn>
+
+                {/* Table */}
+                <div className="relative flex-shrink-0">
+                    <TBtn onClick={() => setOpenPicker(openPicker === 'tableInsert' ? null : 'tableInsert')} title="Insert table"><LayoutGrid size={13} /></TBtn>
+                    {openPicker === 'tableInsert' && <TableInsertPopover editor={editor} onClose={() => setOpenPicker(null)} />}
+                </div>
+            </div>
+
+            {/* ── Row 3: Page · Writing · Productivity · Export ── */}
+            <div className="flex items-center gap-0.5 px-3 py-1.5 flex-wrap">
+                {/* Paper size */}
+                <TDropdown value={paperSize} options={[{ label: 'A4', value: 'A4' }, { label: 'Letter', value: 'Letter' }, { label: 'Legal', value: 'Legal' }]}
+                    onChange={(v) => setPaperSize(v as PaperSize)} width={68} title="Paper size" />
+                {/* Page color */}
+                <TDropdown value={pageColor} options={[{ label: 'White', value: 'white' }, { label: 'Sepia', value: 'sepia' }, { label: 'Gray', value: 'gray' }]}
+                    onChange={(v) => setPageColor(v as PageColor)} width={68} title="Page color" />
+                {/* Density */}
+                <TDropdown value={density} options={[{ label: 'Compact', value: 'compact' }, { label: 'Normal', value: 'comfortable' }, { label: 'Spacious', value: 'spacious' }]}
+                    onChange={(v) => setDensity(v as Density)} width={84} title="Layout density" />
+                <TDivider />
+
+                {/* Writing tools */}
+                <TBtn onClick={() => setFirstLineIndent(!firstLineIndent)} active={firstLineIndent} title="First-line indent">
+                    <IndentIcon size={13} />
                 </TBtn>
+                <TBtn onClick={() => setDropCap(!dropCap)} active={dropCap} title="Drop cap">
+                    <span className="text-[11px] font-serif font-bold leading-none">Dc</span>
+                </TBtn>
+                <TDivider />
+
+                {/* View modes */}
+                <TBtn onClick={() => setFocusMode(!focusMode)} active={focusMode} title="Focus mode — dim other paragraphs">
+                    {focusMode ? <EyeOff size={13} /> : <Eye size={13} />}
+                </TBtn>
+                <TBtn onClick={() => setTypewriterMode(!typewriterMode)} active={typewriterMode} title="Typewriter scroll — keep cursor centered">
+                    <span className="text-[10px] font-mono leading-none">↕</span>
+                </TBtn>
+                <TDivider />
+
+                {/* Pomodoro */}
+                <Timer size={12} className={clsx('flex-shrink-0', pomodoroRunning ? 'text-amber-400' : 'text-gray-700')} />
+                <span className={clsx('text-[11px] tabular-nums font-mono w-10 text-center', pomodoroRunning ? 'text-amber-400' : 'text-gray-600')}>
+                    {String(pMin).padStart(2,'0')}:{String(pSec).padStart(2,'0')}
+                </span>
+                <TBtn onClick={() => setPomodoroRunning(!pomodoroRunning)} title={pomodoroRunning ? 'Pause' : 'Start'} size="sm">
+                    {pomodoroRunning ? <Pause size={11} /> : <Play size={11} />}
+                </TBtn>
+                <TBtn onClick={resetPomodoro} title="Reset pomodoro" size="sm"><RotateCcw size={11} /></TBtn>
+                <TDivider />
+
+                {/* Word goal */}
+                <Target size={12} className="text-gray-700 flex-shrink-0" />
+                {editingGoal ? (
+                    <input autoFocus value={goalInput} onChange={(e) => setGoalInput(e.target.value)}
+                        onBlur={() => { setWordGoal(Math.max(1, parseInt(goalInput) || 1000)); setEditingGoal(false); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { setWordGoal(Math.max(1, parseInt(goalInput) || 1000)); setEditingGoal(false); } }}
+                        className="w-14 bg-white/[0.05] border border-cyan-500/30 rounded px-1.5 py-0.5 text-[11px] text-white outline-none text-center" />
+                ) : (
+                    <button onClick={() => { setGoalInput(String(wordGoal)); setEditingGoal(true); }}
+                        className="flex items-center gap-1 hover:bg-white/5 rounded px-1 py-0.5 transition-colors group">
+                        <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div className={clsx('h-full rounded-full transition-all duration-300', goalPct >= 100 ? 'bg-green-400' : 'bg-cyan-500/60')} style={{ width: `${goalPct}%` }} />
+                        </div>
+                        <span className="text-[10px] text-gray-600 group-hover:text-gray-400">{goalPct}%</span>
+                    </button>
+                )}
+                <TDivider />
+
+                {/* Export */}
+                <div className="relative flex-shrink-0">
+                    <TBtn onClick={() => setOpenPicker(openPicker === 'export' ? null : 'export')} title="Export chapter">
+                        <Download size={13} />
+                    </TBtn>
+                    {openPicker === 'export' && (
+                        <div className="absolute z-50 top-full mt-1 right-0 py-1 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl min-w-[140px]"
+                            onMouseDown={(e) => e.stopPropagation()}>
+                            {[
+                                { label: 'Copy as plain text', icon: <Copy size={12} />, action: () => { onCopyClipboard(); setOpenPicker(null); } },
+                                { label: 'Export as .txt',     icon: <FileText size={12} />, action: () => { onExportTxt(); setOpenPicker(null); } },
+                                { label: 'Export as .md',      icon: <FileText size={12} />, action: () => { onExportMd(); setOpenPicker(null); } },
+                                { label: 'Print / PDF',        icon: <Printer size={12} />, action: () => { window.print(); setOpenPicker(null); } },
+                            ].map((item) => (
+                                <button key={item.label} onClick={item.action}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                                    {item.icon}{item.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
+        </>
     );
 };
 
 // ── Sortable Chapter Item ─────────────────────────────────────────────────────
 const SortableChapterItem = ({
-    id, chapter, isActive, index, onClick, onDelete,
+    id, chapter, isActive, index, onClick, onDelete, meta,
 }: {
     id: string; chapter: Chapter; isActive: boolean; index: number;
     onClick: (c: Chapter) => void; onDelete: (id: string) => void;
+    meta: ChapterMeta | undefined;
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+    const status = meta?.status || chapter.status || 'draft';
+    const sc = STATUS_CONFIG[status];
+    const dotColor = meta?.color || chapter.color || CHAPTER_COLORS[0];
+
     return (
-        <div
-            ref={setNodeRef}
-            style={{ transform: CSS.Transform.toString(transform), transition }}
+        <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }}
             onClick={() => onClick(chapter)}
             className={clsx(
                 'group flex items-center gap-1.5 px-2.5 py-2.5 rounded-xl border transition-all duration-150 cursor-pointer',
                 isDragging && 'opacity-40 scale-[0.98]',
-                isActive
-                    ? 'bg-cyan-500/10 border-cyan-500/25 text-white'
-                    : 'border-transparent hover:bg-white/[0.04] text-gray-400 hover:text-gray-200 hover:border-white/[0.08]',
-            )}
-        >
+                isActive ? 'bg-cyan-500/10 border-cyan-500/25 text-white' : 'border-transparent hover:bg-white/[0.04] text-gray-400 hover:text-gray-200 hover:border-white/[0.08]',
+            )}>
             <button {...attributes} {...listeners} onClick={(e) => e.stopPropagation()}
                 className="cursor-grab active:cursor-grabbing p-0.5 opacity-0 group-hover:opacity-30 hover:!opacity-60 transition-opacity flex-shrink-0">
                 <GripVertical size={13} />
             </button>
-            <span className={clsx('text-[10px] font-mono flex-shrink-0 w-4 text-center',
-                isActive ? 'text-cyan-400/50' : 'text-gray-700')}>
+            {/* Color dot */}
+            <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: dotColor }} />
+            <span className={clsx('text-[10px] font-mono flex-shrink-0 w-4 text-center', isActive ? 'text-cyan-400/50' : 'text-gray-700')}>
                 {String(index + 1).padStart(2, '0')}
             </span>
-            <span className="flex-1 text-xs font-medium truncate leading-tight">
-                {chapter.title || 'Untitled Chapter'}
-            </span>
+            <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium truncate leading-tight">{chapter.title || 'Untitled Chapter'}</p>
+                <span className={clsx('text-[9px] font-medium', sc.text)}>{sc.label}</span>
+            </div>
             <button onClick={(e) => { e.stopPropagation(); onDelete(chapter.id); }}
                 className="p-0.5 opacity-0 group-hover:opacity-100 text-gray-700 hover:text-red-400 transition-all flex-shrink-0">
                 <Trash2 size={12} />
@@ -600,95 +835,95 @@ const SortableChapterItem = ({
     );
 };
 
-// ── Page Break Overlay ────────────────────────────────────────────────────────
+// ── Page Break Overlay (FIXED) ────────────────────────────────────────────────
 const PageBreakOverlay = ({
-    editorRef, zoom, pageHeight, chapterTitle, fontFamily,
+    editorRef, zoom, chapterTitle, fontFamily, paperSize, pageColor, canvasColor,
 }: {
     editorRef: React.RefObject<HTMLDivElement | null>;
-    zoom: number; pageHeight: number;
-    chapterTitle: string; fontFamily: string;
+    zoom: number; chapterTitle: string; fontFamily: string;
+    paperSize: PaperSize; pageColor: PageColor; canvasColor: string;
 }) => {
-    const [breaks, setBreaks] = useState<number[]>([]);
-    const scale = zoom / 100;
+    const [pageCount, setPageCount] = useState(1);
+    const scale  = zoom / 100;
+    const paper  = PAPER_SIZES[paperSize];
+    const pageH  = paper.height * scale;         // full page height in scaled px
     const marginBottom = M_BOTTOM * scale;
     const marginLeft   = M_LEFT   * scale;
     const marginRight  = M_RIGHT  * scale;
+    const footerFontSize = Math.max(9, 10 * scale);
 
     useEffect(() => {
         const el = editorRef.current;
         if (!el) return;
-        const compute = () => {
-            const pageH = pageHeight * scale;
-            const lines: number[] = [];
-            for (let y = pageH; y < el.scrollHeight; y += pageH) lines.push(y);
-            setBreaks(lines);
-        };
+        const compute = () => setPageCount(Math.max(1, Math.ceil(el.scrollHeight / pageH)));
         compute();
         const ro = new ResizeObserver(compute);
         ro.observe(el);
         return () => ro.disconnect();
-    }, [editorRef, zoom, pageHeight]); // eslint-disable-line
-
-    const footerFontSize = Math.max(7, 8 * scale);
+    }, [editorRef, zoom, pageH]);
 
     return (
         <>
-            {breaks.map((y, i) => (
-                <div key={i}>
-                    {/* ── In-page footer (bottom margin of ending page) ── */}
-                    <div
-                        className="absolute left-0 right-0 pointer-events-none flex items-center"
-                        style={{
-                            top: y - marginBottom,
-                            height: marginBottom,
-                            paddingLeft:  marginLeft,
-                            paddingRight: marginRight,
-                            borderTop: '1px solid #e5e7eb',
-                        }}
-                    >
-                        {/* Chapter title – left */}
-                        <span style={{
-                            fontSize: footerFontSize,
-                            color: '#9ca3af',
-                            fontFamily,
-                            fontStyle: 'italic',
-                            flex: 1,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            paddingRight: 8,
-                        }}>
-                            {chapterTitle}
-                        </span>
-                        {/* Page number – right */}
-                        <span style={{
-                            fontSize: footerFontSize,
-                            color: '#9ca3af',
-                            fontFamily,
-                            flexShrink: 0,
-                        }}>
-                            {i + 1}
-                        </span>
-                    </div>
+            {Array.from({ length: pageCount }).map((_, i) => {
+                const pageNum   = i + 1;
+                const footerTop = pageNum * pageH - marginBottom;
+                const gapTop    = pageNum * pageH;
+                const isLast    = pageNum === pageCount;
 
-                    {/* ── Gap between pages ── */}
-                    <div
-                        className="absolute left-0 right-0 pointer-events-none z-10"
-                        style={{ top: y }}
-                    >
-                        <div className="w-full bg-[#1e1e2a]" style={{ height: PAGE_GAP }}>
-                            <div className="absolute inset-x-0 top-0 h-px bg-white/[0.06]" />
-                            <div className="absolute inset-x-0 bottom-0 h-px bg-white/[0.06]" />
+                return (
+                    <div key={pageNum}>
+                        {/* ── Footer line ── */}
+                        <div className="absolute left-0 right-0 pointer-events-none flex items-center"
+                            style={{ top: footerTop, height: marginBottom, paddingLeft: marginLeft, paddingRight: marginRight, borderTop: '1px solid #d1d5db' }}>
+                            {/* Left spacer */}
+                            <span style={{ flex: 1 }} />
+                            {/* Chapter name centered */}
+                            <span style={{
+                                fontSize: footerFontSize,
+                                color: '#6b7280',
+                                fontFamily,
+                                fontStyle: 'italic',
+                                fontWeight: 500,
+                                textAlign: 'center',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                maxWidth: '50%',
+                            }}>
+                                {chapterTitle}
+                            </span>
+                            {/* Page number right */}
+                            <span style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                                <span style={{ fontSize: footerFontSize, color: '#6b7280', fontFamily, fontWeight: 700 }}>
+                                    {pageNum}
+                                </span>
+                            </span>
                         </div>
+
+                        {/* ── Page gap (not after last page) ── */}
+                        {!isLast && (
+                            <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: gapTop }}>
+                                <div style={{ height: PAGE_GAP, backgroundColor: canvasColor }}>
+                                    <div className="absolute inset-x-0 top-0 h-px bg-white/[0.08]" />
+                                    <div className="absolute inset-x-0 bottom-0 h-px bg-white/[0.08]" />
+                                    <div className="flex items-center justify-center h-full">
+                                        <div className="h-px flex-1" style={{ backgroundColor: `${PAGE_BG_COLORS[pageColor]}30` }} />
+                                        <span className="px-2 text-[9px] text-white/20">page {pageNum + 1}</span>
+                                        <div className="h-px flex-1" style={{ backgroundColor: `${PAGE_BG_COLORS[pageColor]}30` }} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                </div>
-            ))}
+                );
+            })}
         </>
     );
 };
 
 // ── BookWriter ─────────────────────────────────────────────────────────────────
 const BookWriter = () => {
+    // ── Core state ───────────────────────────────────────────────────────────
     const [book, setBook]               = useState<Book | null>(null);
     const [chapters, setChapters]       = useState<Chapter[]>([]);
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
@@ -697,19 +932,48 @@ const BookWriter = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const [creatingChapter, setCreatingChapter] = useState(false);
     const [chapterToDelete, setChapterToDelete] = useState<string | null>(null);
+    const [chapterToHardDelete, setChapterToHardDelete] = useState<string | null>(null);
+    const [sidebarTab, setSidebarTab] = useState<'chapters' | 'recycle_bin' | 'bookmarks'>('chapters');
+    const [chapterSearch, setChapterSearch] = useState('');
 
-    // Editor config state
+    // ── Editor config ─────────────────────────────────────────────────────────
     const [zoom, setZoom]               = useState(100);
     const [fontFamily, setFontFamily]   = useState(FONTS[0].value);
     const [fontSize, setFontSize]       = useState(12);
     const [lineSpacing, setLineSpacing] = useState(1.5);
     const [showFind, setShowFind]       = useState(false);
 
-    // Ruler scroll state
-    const [scrollLeft, setScrollLeft]   = useState(0);
-    const [scrollTop, setScrollTop]     = useState(0);
+    // ── Appearance ────────────────────────────────────────────────────────────
+    const [theme, setTheme]       = useState<Theme>(() => (localStorage.getItem('bw-theme') as Theme) || 'dark');
+    const [density, setDensity]   = useState<Density>(() => (localStorage.getItem('bw-density') as Density) || 'comfortable');
+    const [pageColor, setPageColor] = useState<PageColor>('white');
+    const [paperSize, setPaperSize] = useState<PaperSize>('A4');
 
-    // Refs
+    // ── View modes ────────────────────────────────────────────────────────────
+    const [zenMode, setZenMode]               = useState(false);
+    const [focusMode, setFocusMode]           = useState(false);
+    const [typewriterMode, setTypewriterMode] = useState(false);
+    const [firstLineIndent, setFirstLineIndent] = useState(false);
+    const [dropCap, setDropCap]               = useState(false);
+    const [showTOC, setShowTOC]               = useState(false);
+
+    // ── Productivity ──────────────────────────────────────────────────────────
+    const [wordGoal, setWordGoal]   = useState(() => parseInt(localStorage.getItem('bw-wordgoal') || '1000'));
+    const [pomodoroTime, setPomodoroTime]       = useState(25 * 60);
+    const [pomodoroRunning, setPomodoroRunning] = useState(false);
+
+    // ── Navigation ────────────────────────────────────────────────────────────
+    const [scrollLeft, setScrollLeft] = useState(0);
+    const [scrollTop, setScrollTop]   = useState(0);
+    const [scrollProgress, setScrollProgress] = useState(0);
+    const [bookmarks, setBookmarks]   = useState<Bookmark[]>(() => {
+        try { return JSON.parse(localStorage.getItem('bw-bookmarks') || '[]'); } catch { return []; }
+    });
+
+    // ── Chapter metadata ──────────────────────────────────────────────────────
+    const [chapterMeta, setChapterMeta] = useState<Record<string, ChapterMeta>>({});
+
+    // ── Refs ──────────────────────────────────────────────────────────────────
     const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
     const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const activeIdRef   = useRef<string | null>(null);
@@ -725,28 +989,44 @@ const BookWriter = () => {
     useEffect(() => { activeIdRef.current = activeChapterId; }, [activeChapterId]);
     useEffect(() => { bookIdRef.current = bookId; }, [bookId]);
 
+    // Persist settings
+    useEffect(() => { localStorage.setItem('bw-theme', theme); }, [theme]);
+    useEffect(() => { localStorage.setItem('bw-density', density); }, [density]);
+    useEffect(() => { localStorage.setItem('bw-wordgoal', String(wordGoal)); }, [wordGoal]);
+    useEffect(() => { localStorage.setItem('bw-bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
+    useEffect(() => {
+        if (bookId) localStorage.setItem(`bw-meta-${bookId}`, JSON.stringify(chapterMeta));
+    }, [chapterMeta, bookId]);
+
     const activeChapter = chapters.find(c => c.id === activeChapterId) ?? null;
+
+    // ── Derived layout values ─────────────────────────────────────────────────
+    const densityCfg  = DENSITY_CONFIG[density];
+    const paper       = PAPER_SIZES[paperSize];
+    const scale       = zoom / 100;
+    const pageWidthPx = paper.width  * scale;
+    const pageHeightPx = paper.height * scale;
+    const scrollAreaW = pageWidthPx + densityCfg.padH * 2;
+    const canvasColor = CANVAS_COLORS[theme];
 
     // ── Load book ─────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!bookId) { navigate('/admin/books'); return; }
+        // Load saved chapter meta
+        try { setChapterMeta(JSON.parse(localStorage.getItem(`bw-meta-${bookId}`) || '{}')); } catch {}
         (async () => {
             try {
                 const res = await fetch(`${API_URL}/${bookId}`);
                 if (!res.ok) throw new Error('Not found');
                 const data = await res.json();
                 setBook(data);
-                const sorted = [...(data.chapters ?? [])].sort(
-                    (a: Chapter, b: Chapter) => a.order - b.order,
-                );
+                const sorted = [...(data.chapters ?? [])].sort((a: Chapter, b: Chapter) => a.order - b.order);
                 setChapters(sorted);
                 if (sorted.length > 0) setActiveChapterId(sorted[0].id);
             } catch {
                 toast.error('Failed to load book');
                 navigate('/admin/books');
-            } finally {
-                setLoading(false);
-            }
+            } finally { setLoading(false); }
         })();
     }, [bookId]); // eslint-disable-line
 
@@ -756,15 +1036,19 @@ const BookWriter = () => {
             StarterKit,
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             Underline,
+            TextStyle,
+            Color.configure({ types: ['textStyle'] }),
+            Highlight.configure({ multicolor: true }),
+            TiptapLink.configure({ openOnClick: false, HTMLAttributes: { rel: 'noopener noreferrer', target: '_blank' } }),
+            TiptapTable.configure({ resizable: true }),
+            TableRow, TableHeader, TableCell,
+            Subscript, Superscript,
         ],
         content: '',
-        editorProps: {
-            attributes: { class: 'prose-editor focus:outline-none', spellcheck: 'true' },
-        },
+        editorProps: { attributes: { class: 'prose-editor focus:outline-none', spellcheck: 'true' } },
         onUpdate: ({ editor }) => {
             const html = editor.getHTML();
-            const id   = activeIdRef.current;
-            const bid  = bookIdRef.current;
+            const id   = activeIdRef.current; const bid = bookIdRef.current;
             if (!id || !bid) return;
             setChapters(prev => prev.map(c => c.id === id ? { ...c, content: html } : c));
             if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
@@ -778,13 +1062,71 @@ const BookWriter = () => {
                         body: JSON.stringify({ content: html }),
                     });
                     setSaveStatus('saved');
-                } catch {
-                    setSaveStatus('idle');
-                    toast.error('Auto-save failed', { id: 'save-err' });
-                }
+                } catch { setSaveStatus('idle'); toast.error('Auto-save failed', { id: 'save-err' }); }
             }, 1500);
         },
     });
+
+    // ── Pomodoro ──────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!pomodoroRunning) return;
+        const interval = setInterval(() => {
+            setPomodoroTime(t => {
+                if (t <= 1) {
+                    setPomodoroRunning(false);
+                    toast.success('🍅 Pomodoro complete! Take a 5-minute break.', { duration: 6000 });
+                    return 25 * 60;
+                }
+                return t - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [pomodoroRunning]);
+
+    const resetPomodoro = () => { setPomodoroRunning(false); setPomodoroTime(25 * 60); };
+
+    // ── Focus mode ────────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!editor) return;
+        const updateFocus = () => {
+            if (!editorDomRef.current) return;
+            const container = editorDomRef.current;
+            const blocks = Array.from(container.querySelectorAll('p, h1, h2, h3, h4, li, blockquote, pre'));
+            if (!focusMode) { blocks.forEach(b => b.classList.remove('focus-highlighted')); return; }
+            try {
+                const { from } = editor.state.selection;
+                const domNode = editor.view.domAtPos(from).node;
+                let node: Node | null = domNode.nodeType === 3 ? domNode.parentElement : domNode as Element;
+                let focused: Element | null = null;
+                while (node && node !== container) {
+                    if (blocks.includes(node as Element)) { focused = node as Element; break; }
+                    node = (node as Element).parentElement;
+                }
+                blocks.forEach(b => b === focused ? b.classList.add('focus-highlighted') : b.classList.remove('focus-highlighted'));
+            } catch {}
+        };
+        editor.on('selectionUpdate', updateFocus);
+        editor.on('update', updateFocus);
+        return () => { editor.off('selectionUpdate', updateFocus); editor.off('update', updateFocus); };
+    }, [focusMode, editor]);
+
+    // ── Typewriter scroll ──────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!typewriterMode || !editor) return;
+        const scroll = () => {
+            try {
+                const { from } = editor.state.selection;
+                const coords  = editor.view.coordsAtPos(from);
+                const el      = scrollAreaRef.current;
+                if (!el) return;
+                const rect = el.getBoundingClientRect();
+                const relY = coords.top - rect.top + el.scrollTop;
+                el.scrollTo({ top: Math.max(0, relY - el.clientHeight / 2 + 20), behavior: 'smooth' });
+            } catch {}
+        };
+        editor.on('selectionUpdate', scroll);
+        return () => { editor.off('selectionUpdate', scroll); };
+    }, [typewriterMode, editor]);
 
     // ── Keyboard shortcuts ────────────────────────────────────────────────────
     useEffect(() => {
@@ -795,24 +1137,27 @@ const BookWriter = () => {
             if (mod && e.key.toLowerCase() === 'y')                 { e.preventDefault(); editor.chain().focus().redo().run(); }
             if (mod && e.shiftKey && e.key.toLowerCase() === 'z')   { e.preventDefault(); editor.chain().focus().redo().run(); }
             if (mod && e.key.toLowerCase() === 'f')                 { e.preventDefault(); setShowFind(true); }
+            if (e.key === 'Escape' && zenMode)                      { setZenMode(false); }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [editor]);
+    }, [editor, zenMode]);
 
-    // Sync editor content on chapter switch
+    // ── Sync editor on chapter switch ─────────────────────────────────────────
     useEffect(() => {
         if (!editor || !activeChapter) return;
         editor.commands.setContent(activeChapter.content || '', { emitUpdate: false } as any);
     }, [activeChapterId]); // eslint-disable-line
 
-    // ── Scroll sync for rulers ────────────────────────────────────────────────
+    // ── Scroll sync ───────────────────────────────────────────────────────────
     useEffect(() => {
         const el = scrollAreaRef.current;
         if (!el) return;
         const onScroll = () => {
             setScrollLeft(el.scrollLeft);
             setScrollTop(el.scrollTop);
+            const max = el.scrollHeight - el.clientHeight;
+            setScrollProgress(max > 0 ? Math.min(1, el.scrollTop / max) : 0);
         };
         el.addEventListener('scroll', onScroll, { passive: true });
         return () => el.removeEventListener('scroll', onScroll);
@@ -832,7 +1177,7 @@ const BookWriter = () => {
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ title: value }),
                 });
-            } catch { /* silent */ }
+            } catch {}
         }, 800);
     };
 
@@ -842,7 +1187,7 @@ const BookWriter = () => {
         setCreatingChapter(true);
         try {
             const token = await auth.currentUser?.getIdToken();
-            const res = await fetch(`${API_URL}/${bookId}/chapters`, {
+            const res   = await fetch(`${API_URL}/${bookId}/chapters`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ title: `Chapter ${chapters.length + 1}`, content: '', order: chapters.length }),
@@ -852,35 +1197,48 @@ const BookWriter = () => {
             setChapters(prev => [...prev, c]);
             setActiveChapterId(c.id);
             toast.success('Chapter created');
-        } catch {
-            toast.error('Failed to create chapter');
-        } finally {
-            setCreatingChapter(false);
-        }
+        } catch { toast.error('Failed to create chapter'); }
+        finally  { setCreatingChapter(false); }
     };
 
     // ── Delete chapter ────────────────────────────────────────────────────────
-    const handleDeleteChapter = (chapterId: string) => {
-        setChapterToDelete(chapterId);
-    };
-
     const confirmDeleteChapter = async () => {
-        const chapterId = chapterToDelete;
-        if (!chapterId) return;
+        const chapterId = chapterToDelete; if (!chapterId) return;
         try {
             const token = await auth.currentUser?.getIdToken();
-            await fetch(`${API_URL}/${bookId}/chapters/${chapterId}`, {
-                method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` },
-            });
+            await fetch(`${API_URL}/${bookId}/chapters/${chapterId}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
             setChapters(prev => {
-                const rest = prev.filter(c => c.id !== chapterId);
-                if (activeChapterId === chapterId) setActiveChapterId(rest[0]?.id ?? null);
-                return rest;
+                const updated = prev.map(c => c.id === chapterId ? { ...c, isDeleted: true } : c);
+                if (activeChapterId === chapterId) {
+                    const rest = updated.filter(c => !c.isDeleted);
+                    setActiveChapterId(rest[0]?.id ?? null);
+                }
+                return updated;
             });
-            toast.success('Chapter deleted');
-        } catch {
-            toast.error('Failed to delete chapter');
-        }
+            toast.success('Chapter moved to recycle bin');
+        } catch { toast.error('Failed to move chapter to recycle bin'); }
+        finally  { setChapterToDelete(null); }
+    };
+
+    const confirmHardDeleteChapter = async () => {
+        const chapterId = chapterToHardDelete; if (!chapterId) return;
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            await fetch(`${API_URL}/${bookId}/chapters/${chapterId}?hard=true`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            setChapters(prev => prev.filter(c => c.id !== chapterId));
+            toast.success('Chapter permanently deleted');
+        } catch { toast.error('Failed to permanently delete chapter'); }
+        finally  { setChapterToHardDelete(null); }
+    };
+
+    const handleRestoreChapter = async (chapterId: string) => {
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const res   = await fetch(`${API_URL}/${bookId}/chapters/${chapterId}/restore`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}` } });
+            if (!res.ok) throw new Error();
+            setChapters(prev => prev.map(c => c.id === chapterId ? { ...c, isDeleted: false } : c));
+            toast.success('Chapter restored');
+        } catch { toast.error('Failed to restore chapter'); }
     };
 
     // ── Drag and drop ─────────────────────────────────────────────────────────
@@ -891,10 +1249,13 @@ const BookWriter = () => {
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id || !bookId) return;
-        const oldIdx = chapters.findIndex(c => c.id === active.id);
-        const newIdx = chapters.findIndex(c => c.id === over.id);
-        const reordered = arrayMove(chapters, oldIdx, newIdx).map((c, i) => ({ ...c, order: i }));
-        setChapters(reordered);
+        const active_chapters = chapters.filter(c => !c.isDeleted);
+        const reordered = arrayMove(active_chapters,
+            active_chapters.findIndex(c => c.id === active.id),
+            active_chapters.findIndex(c => c.id === over.id),
+        ).map((c, i) => ({ ...c, order: i }));
+        const newChapters = chapters.map(c => c.isDeleted ? c : (reordered.find(r => r.id === c.id) || c));
+        setChapters(newChapters);
         try {
             const token = await auth.currentUser?.getIdToken();
             await fetch(`${API_URL}/${bookId}/chapters/reorder`, {
@@ -905,302 +1266,413 @@ const BookWriter = () => {
         } catch { toast.error('Failed to save order'); }
     };
 
-    // ── Stats ─────────────────────────────────────────────────────────────────
-    const totalWords   = chapters.reduce((s, c) => s + countWords(c.content ?? ''), 0);
-    const chapterWords = activeChapter ? countWords(activeChapter.content ?? '') : 0;
-    const readTime     = Math.max(1, Math.ceil(totalWords / 250));
-    const scale        = zoom / 100;
-    const pageWidthPx  = A4_W_PX * scale;
-    const pageHeightPx = A4_H_PX * scale;
-    const scrollAreaW  = pageWidthPx + PAGE_PAD_H * 2;
+    // ── Bookmarks ─────────────────────────────────────────────────────────────
+    const addBookmark = () => {
+        if (!activeChapterId || !scrollAreaRef.current) return;
+        const label = `${activeChapter?.title || 'Chapter'} — p.${Math.ceil(scrollAreaRef.current.scrollTop / pageHeightPx) + 1}`;
+        const bm: Bookmark = { id: Date.now().toString(), label, chapterId: activeChapterId, scrollPos: scrollAreaRef.current.scrollTop };
+        setBookmarks(prev => [...prev, bm]);
+        toast.success('Bookmark added');
+    };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[#050505]">
-                <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="animate-spin text-cyan-400" size={28} />
-                    <p className="text-gray-600 text-sm">Loading your book…</p>
-                </div>
+    const jumpToBookmark = (bm: Bookmark) => {
+        setActiveChapterId(bm.chapterId);
+        setTimeout(() => { if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = bm.scrollPos; }, 200);
+    };
+
+    // ── Export ────────────────────────────────────────────────────────────────
+    const onExportTxt = () => {
+        if (!activeChapter || !editor) return;
+        downloadBlob(editor.getText(), `${activeChapter.title}.txt`, 'text/plain');
+    };
+    const onExportMd = () => {
+        if (!activeChapter || !editor) return;
+        downloadBlob(`# ${activeChapter.title}\n\n${htmlToMarkdown(editor.getHTML())}`, `${activeChapter.title}.md`, 'text/markdown');
+    };
+    const onCopyClipboard = async () => {
+        if (!editor) return;
+        try { await navigator.clipboard.writeText(editor.getText()); toast.success('Copied to clipboard!'); }
+        catch { toast.error('Copy failed'); }
+    };
+
+    // ── Stats ─────────────────────────────────────────────────────────────────
+    const activeChaptersList  = chapters.filter(c => !c.isDeleted);
+    const deletedChaptersList = chapters.filter(c => c.isDeleted);
+    const filteredChapters    = activeChaptersList.filter(c =>
+        !chapterSearch || c.title.toLowerCase().includes(chapterSearch.toLowerCase()));
+
+    const totalWords   = activeChaptersList.reduce((s, c) => s + countWords(c.content ?? ''), 0);
+    const chapterWords = activeChapter && !activeChapter.isDeleted ? countWords(activeChapter.content ?? '') : 0;
+    const chapterChars = activeChapter ? countChars(activeChapter.content ?? '') : 0;
+    const chapterSents = activeChapter ? countSentences(activeChapter.content ?? '') : 0;
+    const readLevel    = activeChapter ? getReadingLevel(activeChapter.content ?? '') : '—';
+    const readTime     = Math.max(1, Math.ceil(totalWords / 250));
+
+    const activeMeta = activeChapterId ? (chapterMeta[activeChapterId] || { status: 'draft' as ChapterStatus, synopsis: '', color: CHAPTER_COLORS[0] }) : null;
+
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+            <div className="flex flex-col items-center gap-3">
+                <Loader2 className="animate-spin text-cyan-400" size={28} />
+                <p className="text-gray-600 text-sm">Loading your book…</p>
             </div>
-        );
-    }
+        </div>
+    );
+
+    // ── Global editor styles string ───────────────────────────────────────────
+    const editorStyles = `
+        .prose-editor { outline: none !important; caret-color: #111827; }
+        .prose-editor > * + * { margin-top: 0.85em; }
+        .prose-editor p {
+            line-height: ${lineSpacing * 1.4};
+            color: #374151;
+            font-size: ${fontSize}pt;
+            font-family: ${fontFamily};
+            ${firstLineIndent ? 'text-indent: 2em;' : ''}
+        }
+        .prose-editor p:first-child::first-letter {
+            ${dropCap ? `font-size: ${fontSize * 3.5}pt; font-weight: 700; float: left; line-height: 0.8; padding-right: 4px; padding-top: 4px; font-family: ${fontFamily}; color: #111827;` : ''}
+        }
+        .prose-editor h1 { font-size: ${Math.round(fontSize * 2)}pt; font-weight: 700; color: #111827; margin-top: 2rem; margin-bottom: 0.5rem; font-family: ${fontFamily}; }
+        .prose-editor h2 { font-size: ${Math.round(fontSize * 1.5)}pt; font-weight: 600; color: #1f2937; margin-top: 1.6rem; margin-bottom: 0.4rem; font-family: ${fontFamily}; }
+        .prose-editor h3 { font-size: ${Math.round(fontSize * 1.2)}pt; font-weight: 600; color: #374151; margin-top: 1.3rem; margin-bottom: 0.3rem; font-family: ${fontFamily}; }
+        .prose-editor blockquote { border-left: 3px solid #d1d5db; padding-left: 1.25rem; color: #6b7280; font-style: italic; margin: 1.5rem 0; }
+        .prose-editor ul  { list-style: disc; padding-left: 1.75rem; }
+        .prose-editor ol  { list-style: decimal; padding-left: 1.75rem; }
+        .prose-editor li  { margin-bottom: 0.3rem; color: #374151; line-height: ${lineSpacing * 1.4}; font-family: ${fontFamily}; font-size: ${fontSize}pt; }
+        .prose-editor code:not(pre code) { background: #f3f4f6; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.875em; color: #1f2937; border: 1px solid #e5e7eb; }
+        .prose-editor pre { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem 1.25rem; overflow-x: auto; margin: 1.5rem 0; }
+        .prose-editor pre code { color: #374151; font-size: 0.875em; background: transparent; padding: 0; border: none; }
+        .prose-editor hr   { border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
+        .prose-editor strong { color: #111827; font-weight: 600; }
+        .prose-editor em   { color: #374151; }
+        .prose-editor s    { color: #9ca3af; }
+        .prose-editor u    { text-decoration: underline; }
+        .prose-editor a    { color: #3b82f6; text-decoration: underline; cursor: pointer; }
+        .prose-editor a:hover { color: #2563eb; }
+        .prose-editor table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        .prose-editor td, .prose-editor th { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; min-width: 60px; vertical-align: top; }
+        .prose-editor th { background: #f9fafb; font-weight: 600; color: #111827; text-align: left; }
+        .prose-editor .selectedCell:after { background: rgba(59,130,246,0.1); content: ''; display: block; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; position: absolute; z-index: 2; }
+        .prose-editor ::selection { background: rgba(59,130,246,0.25); }
+
+        /* Focus mode */
+        .focus-mode .prose-editor p,
+        .focus-mode .prose-editor h1,
+        .focus-mode .prose-editor h2,
+        .focus-mode .prose-editor h3,
+        .focus-mode .prose-editor li,
+        .focus-mode .prose-editor blockquote,
+        .focus-mode .prose-editor pre { opacity: 0.2; transition: opacity 0.2s; }
+        .focus-mode .prose-editor .focus-highlighted { opacity: 1 !important; }
+
+        @media print {
+            body > *:not(.print-area) { display: none !important; }
+            .print-area { display: block !important; }
+        }
+    `;
 
     return (
-        <div className="flex h-[calc(100vh-64px)] w-full bg-[#050505] text-gray-200 overflow-hidden">
+        <div className={clsx(
+            'flex h-[calc(100vh-64px)] w-full text-gray-200 overflow-hidden',
+            zenMode && 'fixed inset-0 z-50',
+        )} style={{ backgroundColor: '#050505' }}>
 
             {/* ── Sidebar ───────────────────────────────────────────────────── */}
-            <aside className={clsx(
-                'flex flex-col border-r border-white/[0.06] bg-[#07070e] transition-all duration-300 flex-shrink-0',
-                sidebarOpen ? 'w-[260px]' : 'w-[52px]',
-            )}>
-                {/* Header */}
-                <div className={clsx(
-                    'h-[52px] border-b border-white/[0.06] flex items-center',
-                    sidebarOpen ? 'px-3 gap-2' : 'flex-col justify-center gap-1 py-1',
+            {!zenMode && (
+                <aside className={clsx(
+                    'flex flex-col border-r border-white/[0.06] bg-[#07070e] transition-all duration-300 flex-shrink-0',
+                    sidebarOpen ? 'w-[268px]' : 'w-[52px]',
                 )}>
-                    <Link to="/admin/books" title="Back to library"
-                        className="p-1 text-gray-600 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0">
-                        <ChevronLeft size={sidebarOpen ? 16 : 14} />
-                    </Link>
-                    {sidebarOpen ? (
-                        <>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-white truncate leading-tight">{book?.title}</p>
-                                <p className="text-[10px] text-gray-600 mt-0.5">{fmtWords(totalWords)} words · {chapters.length} ch.</p>
-                            </div>
-                            <button onClick={() => setSidebarOpen(false)} title="Collapse"
-                                className="p-1 text-gray-700 hover:text-gray-400 transition-colors flex-shrink-0">
-                                <PanelLeftClose size={13} />
-                            </button>
-                        </>
-                    ) : (
-                        <button onClick={() => setSidebarOpen(true)} title="Expand"
-                            className="p-1 text-gray-700 hover:text-gray-400 transition-colors mx-auto">
-                            <PanelLeftOpen size={13} />
-                        </button>
-                    )}
-                </div>
-
-                {sidebarOpen && (
-                    <>
-                        <div className="flex items-center justify-between px-3 pt-4 pb-2">
-                            <span className="text-[10px] font-bold text-gray-700 uppercase tracking-[0.12em]">Chapters</span>
-                            <button onClick={handleCreateChapter} disabled={creatingChapter} title="New chapter"
-                                className="p-1 text-gray-600 hover:text-cyan-400 transition-colors rounded disabled:opacity-40">
-                                {creatingChapter ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-                            </button>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
-                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                                <SortableContext items={chapters.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                                    <div className="space-y-0.5">
-                                        {chapters.map((ch, i) => (
-                                            <SortableChapterItem
-                                                key={ch.id} id={ch.id} chapter={ch} index={i}
-                                                isActive={activeChapterId === ch.id}
-                                                onClick={(c) => setActiveChapterId(c.id)}
-                                                onDelete={handleDeleteChapter}
-                                            />
-                                        ))}
-                                    </div>
-                                </SortableContext>
-                            </DndContext>
-
-                            {chapters.length === 0 && (
-                                <div className="text-center py-10">
-                                    <FileText size={22} className="mx-auto text-gray-800 mb-3" />
-                                    <p className="text-xs text-gray-700 mb-3">No chapters yet</p>
-                                    <button onClick={handleCreateChapter}
-                                        className="text-xs text-cyan-600 hover:text-cyan-400 transition-colors">
-                                        + Add first chapter
-                                    </button>
+                    {/* Header */}
+                    <div className={clsx('h-[52px] border-b border-white/[0.06] flex items-center', sidebarOpen ? 'px-3 gap-2' : 'flex-col justify-center gap-1 py-1')}>
+                        <RouterLink to="/admin/books" title="Back to library"
+                            className="p-1 text-gray-600 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0">
+                            <ChevronLeft size={sidebarOpen ? 16 : 14} />
+                        </RouterLink>
+                        {sidebarOpen ? (
+                            <>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-semibold text-white truncate leading-tight">{book?.title}</p>
+                                    <p className="text-[10px] text-gray-600 mt-0.5">{fmtWords(totalWords)} words · {activeChaptersList.length} ch.</p>
                                 </div>
-                            )}
-                        </div>
+                                <button onClick={() => setSidebarOpen(false)} title="Collapse" className="p-1 text-gray-700 hover:text-gray-400 transition-colors flex-shrink-0">
+                                    <PanelLeftClose size={13} />
+                                </button>
+                            </>
+                        ) : (
+                            <button onClick={() => setSidebarOpen(true)} title="Expand" className="p-1 text-gray-700 hover:text-gray-400 transition-colors mx-auto">
+                                <PanelLeftOpen size={13} />
+                            </button>
+                        )}
+                    </div>
 
-                        {chapters.length > 0 && (
-                            <div className="px-3 py-3 border-t border-white/[0.04] space-y-2.5">
-                                {/* Editable chapter title */}
-                                {activeChapter && (
-                                    <div>
-                                        <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Chapter title</p>
-                                        <input
-                                            value={activeChapter.title}
-                                            onChange={(e) => handleTitleChange(e.target.value)}
-                                            className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700 transition-colors"
-                                            placeholder="Chapter title…"
-                                        />
+                    {sidebarOpen && (
+                        <div className="flex flex-col h-full overflow-hidden">
+                            {/* Tab bar */}
+                            <div className="flex items-center gap-1 px-2 pt-3 pb-2 border-b border-white/[0.04]">
+                                {(['chapters', 'recycle_bin', 'bookmarks'] as const).map((tab) => (
+                                    <button key={tab} onClick={() => setSidebarTab(tab)}
+                                        className={clsx('flex-1 text-[10px] font-bold uppercase tracking-wider py-1.5 rounded transition-colors',
+                                            sidebarTab === tab
+                                                ? tab === 'recycle_bin' ? 'bg-red-500/10 text-red-400' : 'bg-white/10 text-white'
+                                                : 'text-gray-600 hover:text-gray-300')}>
+                                        {tab === 'chapters' ? 'Chapters' : tab === 'recycle_bin' ? `Bin (${deletedChaptersList.length})` : '🔖'}
+                                    </button>
+                                ))}
+                                <button onClick={handleCreateChapter} disabled={creatingChapter} title="New chapter"
+                                    className="p-1.5 text-gray-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded disabled:opacity-40 ml-1">
+                                    {creatingChapter ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                                </button>
+                            </div>
+
+                            {/* List area */}
+                            <div className="flex-1 overflow-y-auto px-2 py-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/10">
+                                {sidebarTab === 'chapters' && (
+                                    <>
+                                        {/* Search */}
+                                        <div className="relative mb-2">
+                                            <Filter size={10} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-700" />
+                                            <input value={chapterSearch} onChange={(e) => setChapterSearch(e.target.value)}
+                                                placeholder="Filter chapters…"
+                                                className="w-full pl-7 pr-2 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-lg text-xs text-white outline-none focus:border-cyan-500/30 placeholder:text-gray-700" />
+                                        </div>
+                                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                                            <SortableContext items={activeChaptersList.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                                                <div className="space-y-0.5">
+                                                    {filteredChapters.map((ch, i) => (
+                                                        <SortableChapterItem key={ch.id} id={ch.id} chapter={ch} index={i}
+                                                            isActive={activeChapterId === ch.id}
+                                                            onClick={(c) => setActiveChapterId(c.id)}
+                                                            onDelete={(id) => setChapterToDelete(id)}
+                                                            meta={chapterMeta[ch.id]} />
+                                                    ))}
+                                                </div>
+                                            </SortableContext>
+                                        </DndContext>
+                                        {activeChaptersList.length === 0 && (
+                                            <div className="text-center py-10">
+                                                <FileText size={22} className="mx-auto text-gray-800 mb-3" />
+                                                <p className="text-xs text-gray-700 mb-3">No chapters yet</p>
+                                                <button onClick={handleCreateChapter} className="text-xs text-cyan-600 hover:text-cyan-400 transition-colors">+ Add first chapter</button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+
+                                {sidebarTab === 'recycle_bin' && (
+                                    <div className="space-y-0.5">
+                                        {deletedChaptersList.map((ch) => (
+                                            <div key={ch.id} className="group flex flex-col gap-1.5 px-2.5 py-2.5 rounded-xl border border-white/[0.04] bg-white/[0.02]">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs font-medium text-gray-400 truncate">{ch.title || 'Untitled'}</span>
+                                                    <div className="flex gap-1">
+                                                        <button onClick={() => setChapterToHardDelete(ch.id)} title="Delete forever" className="p-1 text-gray-600 hover:text-red-400 hover:bg-white/10 rounded transition-all"><Trash2 size={12} /></button>
+                                                        <button onClick={() => handleRestoreChapter(ch.id)} title="Restore" className="p-1 text-gray-600 hover:text-green-400 hover:bg-white/10 rounded transition-all"><Clock size={12} /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {deletedChaptersList.length === 0 && (
+                                            <div className="text-center py-10 text-gray-600"><Trash2 size={22} className="mx-auto text-gray-800 mb-2" /><p className="text-xs">Recycle bin is empty</p></div>
+                                        )}
                                     </div>
                                 )}
 
-                                {/* Stats row */}
-                                <div className="grid grid-cols-3 gap-1.5">
-                                    {[
-                                        { label: 'Ch.', value: chapters.length },
-                                        { label: 'Words', value: fmtWords(chapterWords) },
-                                        { label: 'Read', value: `${readTime}m` },
-                                    ].map(s => (
-                                        <div key={s.label} className="text-center py-2 rounded-lg bg-white/[0.025]">
-                                            <div className="text-sm font-semibold text-gray-300">{s.value}</div>
-                                            <div className="text-[9px] text-gray-700 uppercase tracking-wide mt-0.5">{s.label}</div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Save status */}
-                                <div className={clsx(
-                                    'flex items-center justify-center gap-1.5 text-[10px] font-medium py-1 rounded-lg transition-colors duration-500',
-                                    saveStatus === 'saving'
-                                        ? 'text-amber-400/80 bg-amber-500/5'
-                                        : 'text-green-500/50 bg-green-500/5',
-                                )}>
-                                    {saveStatus === 'saving'
-                                        ? <><Loader2 size={10} className="animate-spin" />Saving…</>
-                                        : <><CheckCircle size={10} />All changes saved</>}
-                                </div>
+                                {sidebarTab === 'bookmarks' && (
+                                    <div className="space-y-0.5">
+                                        <button onClick={addBookmark}
+                                            className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg border border-dashed border-white/10 hover:border-cyan-500/30 text-gray-600 hover:text-cyan-400 transition-all text-xs mb-2">
+                                            <BookmarkPlus size={12} />Add current position
+                                        </button>
+                                        {bookmarks.filter(() => !activeChapterId || true).map((bm) => (
+                                            <div key={bm.id} className="group flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-white/[0.04] cursor-pointer border border-transparent hover:border-white/[0.06]"
+                                                onClick={() => jumpToBookmark(bm)}>
+                                                <Bookmark size={11} className="text-amber-400/60 flex-shrink-0" />
+                                                <span className="flex-1 text-xs text-gray-400 hover:text-white truncate">{bm.label}</span>
+                                                <button onClick={(e) => { e.stopPropagation(); setBookmarks(prev => prev.filter(b => b.id !== bm.id)); }}
+                                                    className="opacity-0 group-hover:opacity-100 p-0.5 text-gray-700 hover:text-red-400 transition-all"><X size={10} /></button>
+                                            </div>
+                                        ))}
+                                        {bookmarks.length === 0 && (
+                                            <div className="text-center py-8 text-gray-700"><Bookmark size={20} className="mx-auto mb-2" /><p className="text-xs">No bookmarks yet</p></div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </>
-                )}
-            </aside>
+
+                            {/* Bottom panel: Chapter meta + stats */}
+                            {chapters.length > 0 && (
+                                <div className="px-3 py-3 border-t border-white/[0.04] space-y-3 flex-shrink-0">
+                                    {activeChapter && activeMeta && (
+                                        <>
+                                            {/* Chapter title */}
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Chapter title</p>
+                                                <input value={activeChapter.title} onChange={(e) => handleTitleChange(e.target.value)}
+                                                    className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700"
+                                                    placeholder="Chapter title…" />
+                                            </div>
+
+                                            {/* Status */}
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Status</p>
+                                                <select value={activeMeta.status}
+                                                    onChange={(e) => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, status: e.target.value as ChapterStatus } }))}
+                                                    className="w-full appearance-none bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 cursor-pointer">
+                                                    {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k} className="bg-[#0d0d1a]">{v.label}</option>)}
+                                                </select>
+                                            </div>
+
+                                            {/* Color */}
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Chapter color</p>
+                                                <div className="flex gap-1.5 flex-wrap">
+                                                    {CHAPTER_COLORS.map((c) => (
+                                                        <button key={c} onClick={() => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, color: c } }))}
+                                                            className={clsx('w-4 h-4 rounded-full border-2 transition-all', activeMeta.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-110')}
+                                                            style={{ backgroundColor: c }} />
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Synopsis */}
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Synopsis</p>
+                                                <textarea value={activeMeta.synopsis || ''}
+                                                    onChange={(e) => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, synopsis: e.target.value } }))}
+                                                    placeholder="Brief summary of this chapter…"
+                                                    rows={3}
+                                                    className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700 resize-none" />
+                                            </div>
+                                        </>
+                                    )}
+
+                                    {/* Stats grid */}
+                                    <div className="grid grid-cols-3 gap-1.5">
+                                        {[
+                                            { label: 'Ch.',    value: activeChaptersList.length },
+                                            { label: 'Words',  value: fmtWords(chapterWords) },
+                                            { label: 'Read',   value: `${readTime}m` },
+                                        ].map(s => (
+                                            <div key={s.label} className="text-center py-2 rounded-lg bg-white/[0.025]">
+                                                <div className="text-sm font-semibold text-gray-300">{s.value}</div>
+                                                <div className="text-[9px] text-gray-700 uppercase tracking-wide mt-0.5">{s.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Save status */}
+                                    <div className={clsx(
+                                        'flex items-center justify-center gap-1.5 text-[10px] font-medium py-1 rounded-lg transition-colors duration-500',
+                                        saveStatus === 'saving' ? 'text-amber-400/80 bg-amber-500/5' : 'text-green-500/50 bg-green-500/5',
+                                    )}>
+                                        {saveStatus === 'saving'
+                                            ? <><Loader2 size={10} className="animate-spin" />Saving…</>
+                                            : <><CheckCircle size={10} />All changes saved</>}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </aside>
+            )}
 
             {/* ── Main Editor Area ──────────────────────────────────────────── */}
             <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 {activeChapter ? (
                     <>
-                        {/* Toolbar */}
-                        <EditorToolbar
-                            editor={editor}
-                            zoom={zoom} setZoom={setZoom}
-                            fontFamily={fontFamily} setFontFamily={setFontFamily}
-                            fontSize={fontSize} setFontSize={setFontSize}
-                            lineSpacing={lineSpacing} setLineSpacing={setLineSpacing}
-                            showFind={showFind} setShowFind={setShowFind}
-                        />
+                        {/* Scroll progress bar */}
+                        <div className="h-0.5 bg-white/[0.05] flex-shrink-0 relative">
+                            <div className="absolute left-0 top-0 h-full bg-cyan-500/60 transition-all duration-150" style={{ width: `${scrollProgress * 100}%` }} />
+                        </div>
 
-                        {/* Find & Replace */}
-                        {showFind && editor && (
-                            <FindReplacePanel editor={editor} onClose={() => setShowFind(false)} />
+                        {/* Toolbar */}
+                        {!zenMode && (
+                            <EditorToolbar
+                                editor={editor}
+                                zoom={zoom} setZoom={setZoom}
+                                fontFamily={fontFamily} setFontFamily={setFontFamily}
+                                fontSize={fontSize} setFontSize={setFontSize}
+                                lineSpacing={lineSpacing} setLineSpacing={setLineSpacing}
+                                showFind={showFind} setShowFind={setShowFind}
+                                theme={theme} setTheme={setTheme}
+                                density={density} setDensity={setDensity}
+                                paperSize={paperSize} setPaperSize={setPaperSize}
+                                pageColor={pageColor} setPageColor={setPageColor}
+                                zenMode={zenMode} setZenMode={setZenMode}
+                                focusMode={focusMode} setFocusMode={setFocusMode}
+                                typewriterMode={typewriterMode} setTypewriterMode={setTypewriterMode}
+                                firstLineIndent={firstLineIndent} setFirstLineIndent={setFirstLineIndent}
+                                dropCap={dropCap} setDropCap={setDropCap}
+                                showTOC={showTOC} setShowTOC={setShowTOC}
+                                pomodoroTime={pomodoroTime} pomodoroRunning={pomodoroRunning}
+                                setPomodoroRunning={setPomodoroRunning} resetPomodoro={resetPomodoro}
+                                wordGoal={wordGoal} setWordGoal={setWordGoal} chapterWords={chapterWords}
+                                onExportTxt={onExportTxt} onExportMd={onExportMd} onCopyClipboard={onCopyClipboard}
+                            />
                         )}
 
-                        {/* ── Ruler + Editor layout ─────────────────────────── */}
-                        <div className="flex flex-1 min-h-0 overflow-hidden">
+                        {/* Find & Replace */}
+                        {showFind && editor && <FindReplacePanel editor={editor} onClose={() => setShowFind(false)} />}
 
-                            {/* Left ruler + corner */}
-                            <div className="flex flex-col flex-shrink-0" style={{ width: RULER_SIZE }}>
-                                {/* Corner square */}
-                                <div
-                                    className="flex-shrink-0 bg-[#12121f] border-r border-b border-white/[0.07]"
-                                    style={{ height: RULER_SIZE, width: RULER_SIZE }}
-                                />
-                                {/* Vertical ruler */}
-                                <div className="flex-1 overflow-hidden">
-                                    <VerticalRuler scrollTop={scrollTop} zoom={zoom} height={pageHeightPx * 3} />
+                        {/* Ruler + Editor + TOC layout */}
+                        <div className="flex flex-1 min-h-0 overflow-hidden relative">
+                            {/* TOC panel */}
+                            {showTOC && editor && <TOCPanel editor={editor} onClose={() => setShowTOC(false)} scrollAreaRef={scrollAreaRef} />}
+
+                            {/* Left ruler */}
+                            {!zenMode && (
+                                <div className="flex flex-col flex-shrink-0" style={{ width: RULER_SIZE }}>
+                                    <div className="flex-shrink-0 bg-[#12121f] border-r border-b border-white/[0.07]" style={{ height: RULER_SIZE, width: RULER_SIZE }} />
+                                    <div className="flex-1 overflow-hidden">
+                                        <VerticalRuler scrollTop={scrollTop} zoom={zoom} height={pageHeightPx * 3} pagePadV={densityCfg.padV} />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
                             {/* Center: top ruler + scroll area */}
                             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                                {/* Top ruler */}
-                                <HorizontalRuler
-                                    scrollLeft={scrollLeft}
-                                    zoom={zoom}
-                                    contentWidth={scrollAreaW}
-                                />
+                                {!zenMode && (
+                                    <HorizontalRuler scrollLeft={scrollLeft} zoom={zoom} contentWidth={scrollAreaW} pagePadH={densityCfg.padH} paperSize={paperSize} />
+                                )}
 
                                 {/* Scrollable page area */}
-                                <div
-                                    ref={scrollAreaRef}
-                                    className="flex-1 overflow-auto bg-[#1e1e2a]"
-                                    style={{ scrollbarGutter: 'stable' }}
-                                >
-                                    {/* Global editor styles */}
-                                    <style>{`
-                                        .prose-editor { outline: none !important; caret-color: #111827; }
-                                        .prose-editor > * + * { margin-top: 0.85em; }
-                                        .prose-editor p          { line-height: ${lineSpacing * 1.4}; color: #374151; font-size: ${fontSize}pt; font-family: ${fontFamily}; }
-                                        .prose-editor h1         { font-size: ${Math.round(fontSize * 2)}pt; font-weight: 700; color: #111827; margin-top: 2rem; margin-bottom: 0.5rem; font-family: ${fontFamily}; }
-                                        .prose-editor h2         { font-size: ${Math.round(fontSize * 1.5)}pt; font-weight: 600; color: #1f2937; margin-top: 1.6rem; margin-bottom: 0.4rem; font-family: ${fontFamily}; }
-                                        .prose-editor h3         { font-size: ${Math.round(fontSize * 1.2)}pt; font-weight: 600; color: #374151; margin-top: 1.3rem; margin-bottom: 0.3rem; font-family: ${fontFamily}; }
-                                        .prose-editor blockquote { border-left: 3px solid #d1d5db; padding-left: 1.25rem; color: #6b7280; font-style: italic; margin: 1.5rem 0; }
-                                        .prose-editor ul         { list-style: disc; padding-left: 1.75rem; }
-                                        .prose-editor ol         { list-style: decimal; padding-left: 1.75rem; }
-                                        .prose-editor li         { margin-bottom: 0.3rem; color: #374151; line-height: ${lineSpacing * 1.4}; font-family: ${fontFamily}; font-size: ${fontSize}pt; }
-                                        .prose-editor code:not(pre code) { background: #f3f4f6; padding: 0.1em 0.4em; border-radius: 4px; font-size: 0.875em; color: #1f2937; border: 1px solid #e5e7eb; }
-                                        .prose-editor pre        { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 1rem 1.25rem; overflow-x: auto; margin: 1.5rem 0; }
-                                        .prose-editor pre code   { color: #374151; font-size: 0.875em; background: transparent; padding: 0; border: none; }
-                                        .prose-editor hr         { border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
-                                        .prose-editor strong     { color: #111827; font-weight: 600; }
-                                        .prose-editor em         { color: #374151; }
-                                        .prose-editor s          { color: #9ca3af; }
-                                        .prose-editor u          { text-decoration: underline; }
-                                        /* Selections */
-                                        .prose-editor ::selection { background: rgba(59,130,246,0.25); }
+                                <div ref={scrollAreaRef} className={clsx('flex-1 overflow-auto', focusMode && 'focus-mode')}
+                                    style={{ scrollbarGutter: 'stable', backgroundColor: canvasColor }}>
+                                    <style>{editorStyles}</style>
 
-                                        @media print {
-                                            body > *:not(.print-area) { display: none !important; }
-                                            .print-area { display: block !important; }
-                                        }
-                                    `}</style>
-
-                                    {/* Page container */}
-                                    <div
-                                        className="relative mx-auto"
-                                        style={{
-                                            width: scrollAreaW,
-                                            paddingTop: PAGE_PAD_V,
-                                            paddingBottom: PAGE_PAD_V,
-                                        }}
-                                    >
-                                        {/* Page 1 "sheet" visual */}
-                                        <div 
-                                            className="bg-white shadow-[0_0_50px_rgba(0,0,0,0.2)] rounded-sm relative overflow-hidden"
-                                            style={{ minHeight: pageHeightPx }}
-                                        >
-
-                                            {/* Margin guides (very subtle) */}
+                                    <div className="relative mx-auto"
+                                        style={{ width: scrollAreaW, paddingTop: densityCfg.padV, paddingBottom: densityCfg.padV }}>
+                                        {/* Page sheet */}
+                                        <div className="relative shadow-[0_0_50px_rgba(0,0,0,0.3)] rounded-sm overflow-hidden"
+                                            style={{
+                                                minHeight: pageHeightPx,
+                                                backgroundColor: PAGE_BG_COLORS[pageColor],
+                                            }}>
+                                            {/* Margin guides */}
                                             <div className="absolute inset-0 pointer-events-none" style={{
-                                                boxShadow: `inset ${M_LEFT * scale}px 0 0 rgba(241,245,249,0.6),
-                                                            inset -${M_RIGHT * scale}px 0 0 rgba(241,245,249,0.6),
-                                                            inset 0 ${M_TOP * scale}px 0 rgba(241,245,249,0.6),
-                                                            inset 0 -${M_BOTTOM * scale}px 0 rgba(241,245,249,0.6)`,
+                                                boxShadow: `inset ${M_LEFT * scale}px 0 0 rgba(0,0,0,0.03), inset -${M_RIGHT * scale}px 0 0 rgba(0,0,0,0.03), inset 0 ${M_TOP * scale}px 0 rgba(0,0,0,0.03), inset 0 -${M_BOTTOM * scale}px 0 rgba(0,0,0,0.03)`,
                                             }} />
 
                                             {/* Editor content */}
-                                            <div
-                                                ref={editorDomRef}
-                                                className="relative"
+                                            <div ref={editorDomRef} className="relative"
                                                 style={{
                                                     padding: `${M_TOP * scale}px ${M_RIGHT * scale}px ${M_BOTTOM * scale}px ${M_LEFT * scale}px`,
                                                     minHeight: pageHeightPx,
-                                                }}
-                                            >
+                                                }}>
                                                 <EditorContent editor={editor} />
 
-                                                {/* Page break overlays */}
+                                                {/* Page break overlays (FIXED) */}
                                                 <PageBreakOverlay
                                                     editorRef={editorDomRef}
                                                     zoom={zoom}
-                                                    pageHeight={pageHeightPx - (M_TOP + M_BOTTOM) * scale}
                                                     chapterTitle={activeChapter?.title || ''}
                                                     fontFamily={fontFamily}
+                                                    paperSize={paperSize}
+                                                    pageColor={pageColor}
+                                                    canvasColor={canvasColor}
                                                 />
-                                            </div>
-
-                                            {/* Footer: chapter title + page number */}
-                                            <div
-                                                className="absolute bottom-0 left-0 right-0 flex items-center pointer-events-none"
-                                                style={{
-                                                    height: M_BOTTOM * scale,
-                                                    paddingLeft:  M_LEFT  * scale,
-                                                    paddingRight: M_RIGHT * scale,
-                                                    borderTop: '1px solid #e5e7eb',
-                                                }}
-                                            >
-                                                {/* Chapter title – left */}
-                                                <span style={{
-                                                    fontSize: Math.max(7, 8 * scale),
-                                                    color: '#9ca3af',
-                                                    fontFamily,
-                                                    fontStyle: 'italic',
-                                                    flex: 1,
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                    paddingRight: 8,
-                                                }}>
-                                                    {activeChapter?.title || ''}
-                                                </span>
-                                                {/* Page number – right */}
-                                                <span style={{
-                                                    fontSize: Math.max(7, 8 * scale),
-                                                    color: '#9ca3af',
-                                                    fontFamily,
-                                                    flexShrink: 0,
-                                                }}>
-                                                    1
-                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1208,71 +1680,68 @@ const BookWriter = () => {
                             </div>
 
                             {/* Right ruler */}
-                            <div className="flex flex-col flex-shrink-0" style={{ width: RULER_SIZE }}>
-                                <div
-                                    className="flex-shrink-0 bg-[#12121f] border-l border-b border-white/[0.07]"
-                                    style={{ height: RULER_SIZE, width: RULER_SIZE }}
-                                />
-                                <div className="flex-1 overflow-hidden">
-                                    <RightRuler scrollTop={scrollTop} zoom={zoom} height={pageHeightPx * 3} />
+                            {!zenMode && (
+                                <div className="flex flex-col flex-shrink-0" style={{ width: RULER_SIZE }}>
+                                    <div className="flex-shrink-0 bg-[#12121f] border-l border-b border-white/[0.07]" style={{ height: RULER_SIZE, width: RULER_SIZE }} />
+                                    <div className="flex-1 overflow-hidden">
+                                        <RightRuler scrollTop={scrollTop} zoom={zoom} height={pageHeightPx * 3} pagePadV={densityCfg.padV} />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Status bar */}
-                        <div className="h-6 border-t border-white/[0.05] bg-[#07070e] flex items-center px-4 gap-4 flex-shrink-0">
-                            <span className="text-[10px] text-gray-700 tabular-nums">
-                                Words: {chapterWords.toLocaleString()}
-                            </span>
-                            <span className="text-[10px] text-gray-700">
-                                {fontFamily.split(',')[0].replace(/"/g, '')} · {fontSize}pt
-                            </span>
-                            <span className="text-[10px] text-gray-700">
-                                Zoom: {zoom}%
-                            </span>
-                            <div className="flex-1" />
-                            <span className="text-[10px] text-gray-700">A4</span>
-                        </div>
+                        {!zenMode && (
+                            <div className="h-6 border-t border-white/[0.05] bg-[#07070e] flex items-center px-4 gap-4 flex-shrink-0 text-[10px] text-gray-700">
+                                <span className="tabular-nums">Words: {chapterWords.toLocaleString()}</span>
+                                <span className="tabular-nums">Chars: {chapterChars.toLocaleString()}</span>
+                                <span className="tabular-nums">Sentences: {chapterSents}</span>
+                                <span>Reading level: {readLevel}</span>
+                                <span>{fontFamily.split(',')[0].replace(/"/g, '')} · {fontSize}pt</span>
+                                <span>Zoom: {zoom}%</span>
+                                <div className="flex-1" />
+                                {focusMode    && <span className="text-cyan-500/60">Focus</span>}
+                                {typewriterMode && <span className="text-cyan-500/60">Typewriter</span>}
+                                {pomodoroRunning && <span className="text-amber-400/80">🍅 Running</span>}
+                                <span>{paperSize}</span>
+                            </div>
+                        )}
+
+                        {/* Zen mode exit hint */}
+                        {zenMode && (
+                            <button onClick={() => setZenMode(false)}
+                                className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-3 py-1.5 bg-black/40 hover:bg-black/60 text-white/40 hover:text-white/80 text-xs rounded-full border border-white/10 transition-all">
+                                <Minimize2 size={11} />Press Esc to exit zen mode
+                            </button>
+                        )}
                     </>
                 ) : (
-                    /* Empty state */
                     <div className="flex-1 flex flex-col items-center justify-center gap-5 text-center p-10">
                         <div className="w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center">
                             <BookOpen size={26} className="text-gray-700" />
                         </div>
                         <div>
                             <h3 className="text-base font-semibold text-gray-300 mb-1.5">
-                                {chapters.length === 0 ? 'Start writing' : 'Select a chapter'}
+                                {activeChaptersList.length === 0 ? 'Start writing' : 'Select a chapter'}
                             </h3>
                             <p className="text-gray-600 text-sm max-w-xs leading-relaxed">
-                                {chapters.length === 0
-                                    ? 'Create your first chapter from the sidebar to begin.'
-                                    : 'Choose a chapter from the sidebar to open it.'}
+                                {activeChaptersList.length === 0 ? 'Create your first chapter from the sidebar to begin.' : 'Choose a chapter from the sidebar to open it.'}
                             </p>
                         </div>
-                        {chapters.length === 0 && (
-                            <button
-                                onClick={handleCreateChapter} disabled={creatingChapter}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 hover:border-cyan-500/30 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
-                            >
-                                {creatingChapter
-                                    ? <><Loader2 size={14} className="animate-spin" />Creating…</>
-                                    : <><Plus size={14} />Create First Chapter</>}
+                        {activeChaptersList.length === 0 && (
+                            <button onClick={handleCreateChapter} disabled={creatingChapter}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-500/10 hover:bg-cyan-500/15 text-cyan-400 border border-cyan-500/20 rounded-xl text-sm font-medium transition-all disabled:opacity-50">
+                                {creatingChapter ? <><Loader2 size={14} className="animate-spin" />Creating…</> : <><Plus size={14} />Create First Chapter</>}
                             </button>
                         )}
                     </div>
                 )}
             </main>
 
-            {/* ── Confirm: Delete chapter ───────────────────────────────── */}
-            <ConfirmModal
-                isOpen={!!chapterToDelete}
-                onClose={() => setChapterToDelete(null)}
-                onConfirm={confirmDeleteChapter}
-                title="Delete Chapter"
-                message={`Are you sure you want to delete "${chapters.find(c => c.id === chapterToDelete)?.title ?? 'this chapter'}"? This action cannot be undone.`}
-                isDestructive
-            />
+            <ConfirmModal isOpen={!!chapterToDelete} onClose={() => setChapterToDelete(null)} onConfirm={confirmDeleteChapter}
+                title="Delete Chapter" message={`Move "${chapters.find(c => c.id === chapterToDelete)?.title ?? 'this chapter'}" to recycle bin?`} isDestructive />
+            <ConfirmModal isOpen={!!chapterToHardDelete} onClose={() => setChapterToHardDelete(null)} onConfirm={confirmHardDeleteChapter}
+                title="Permanently Delete" message={`Permanently delete "${chapters.find(c => c.id === chapterToHardDelete)?.title ?? 'this chapter'}"? This cannot be undone.`} isDestructive />
         </div>
     );
 };

@@ -33,7 +33,7 @@ const BlogPost = () => {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center pt-40 gap-4 text-blue-300">
+            <div className="flex flex-col items-center justify-center pt-40 gap-4 text-orange-400">
                 <Loader2 className="animate-spin" size={36} />
                 <p className="animate-pulse">Loading article...</p>
             </div>
@@ -44,7 +44,7 @@ const BlogPost = () => {
         return (
             <div className="text-center pt-40 text-gray-400">
                 <p className="text-2xl font-bold mb-2">Article not found.</p>
-                <Link to="/blogs" className="text-blue-400 hover:underline text-sm">← Back to Blogs</Link>
+                <Link to="/blogs" className="text-orange-400 hover:underline text-sm">← Back to Blogs</Link>
             </div>
         );
     }
@@ -56,7 +56,7 @@ const BlogPost = () => {
             </Link>
 
             {blog.coverImage && (
-                <div className="glass-card max-w-2xl mx-auto rounded-2xl overflow-hidden mb-8 shadow-2xl">
+                <div className="naruto-card max-w-2xl mx-auto rounded-2xl overflow-hidden mb-8 shadow-2xl">
                     <img src={blog.coverImage} alt={blog.title} className="w-full h-full object-cover" />
                 </div>
             )}
@@ -80,14 +80,14 @@ const BlogPost = () => {
             <div className="prose prose-invert max-w-none 
                 prose-img:rounded-2xl prose-img:shadow-xl
                 prose-headings:text-white prose-headings:font-orbitron
-                prose-h1:text-4xl prose-h1:text-neon-purple
-                prose-h2:text-3xl prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-neon-purple
-                prose-h3:text-xl prose-h3:text-neon-blue prose-h3:mt-8 prose-h3:mb-3
+                prose-h1:text-4xl prose-h1:text-orange-400
+                prose-h2:text-3xl prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-3 prose-h2:mt-12 prose-h2:mb-6 prose-h2:text-orange-400
+                prose-h3:text-xl prose-h3:text-orange-300 prose-h3:mt-8 prose-h3:mb-3
                 prose-p:text-gray-300 prose-p:leading-relaxed prose-p:mb-6
-                prose-a:text-neon-blue prose-a:no-underline hover:prose-a:underline
+                prose-a:text-orange-400 prose-a:no-underline hover:prose-a:underline
                 prose-strong:text-white prose-strong:font-bold
                 prose-ul:list-disc prose-ul:ml-4 prose-li:pl-2 prose-li:mb-2
-                marker:text-neon-blue">
+                marker:text-orange-400">
                 <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]} rehypePlugins={[rehypeRaw]}>
                     {blog.content}
                 </ReactMarkdown>

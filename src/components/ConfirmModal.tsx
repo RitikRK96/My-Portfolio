@@ -17,7 +17,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
-            <div className="glass-card w-full max-w-md p-6 rounded-xl animate-in fade-in zoom-in duration-200">
+            <div className="naruto-card w-full max-w-md p-6 rounded-xl animate-in fade-in zoom-in duration-200">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
                         {isDestructive && <AlertTriangle className="text-yellow-500 w-6 h-6" />}
@@ -39,7 +39,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({
                     </button>
                     <button
                         onClick={() => { onConfirm(); onClose(); }}
-                        className={`px-4 py-2 rounded-lg font-semibold text-white transition-colors ${isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
+                        className={`px-4 py-2 rounded-lg font-semibold text-white transition-colors ${isDestructive ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600 text-black'
                             }`}
                     >
                         Confirm

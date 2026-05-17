@@ -15,9 +15,9 @@ const Contact = () => {
         <div className="page-container py-8 pb-20">
             {/* Header */}
             <div className="text-center mb-16 relative" data-aos="fade-up">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-neon-blue/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neon-blue/5 border border-neon-blue/20 text-neon-blue text-xs orbitron tracking-wider mb-5">
-                    <MessageSquare size={14} /> Let's Connect
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-red-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/5 border border-red-500/20 text-red-500 text-xs orbitron tracking-wider mb-5">
+                    <MessageSquare size={14} /> Send a Messenger Bird
                 </div>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">

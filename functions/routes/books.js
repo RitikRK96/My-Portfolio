@@ -20,7 +20,11 @@ const syncBookWordCount = async (bookId) => {
             .get();
 
         const total = chaptersSnap.docs.reduce(
-            (sum, doc) => sum + countWords(doc.data().content || ''),
+            (sum, doc) => {
+                const data = doc.data();
+                if (data.isDeleted) return sum;
+                return sum + countWords(data.content || '');
+            },
             0
         );
 
@@ -156,32 +160,54 @@ router.put('/:id', validateFirebaseIdToken, async (req, res) => {
     }
 });
 
-// ─── DELETE /:id — Delete book + all its chapters ─────────────────────────────
-// FIX: the original left all chapters as orphaned documents in Firestore.
-// We now batch-delete every chapter before removing the book document.
+// ─── DELETE /:id — Delete book (Soft or Hard) ─────────────────────────────────
 router.delete('/:id', validateFirebaseIdToken, async (req, res) => {
     try {
+        const { hard } = req.query;
         const bookRef = db.collection('books').doc(req.params.id);
 
-        // 1. Fetch all chapters
-        const chaptersSnap = await bookRef.collection('chapters').get();
+        if (hard === 'true') {
+            // 1. Fetch all chapters
+            const chaptersSnap = await bookRef.collection('chapters').get();
 
-        // 2. Batch-delete chapters (Firestore max 500 per batch)
-        if (!chaptersSnap.empty) {
-            const BATCH_SIZE = 400;
-            const docs = chaptersSnap.docs;
+            // 2. Batch-delete chapters
+            if (!chaptersSnap.empty) {
+                const BATCH_SIZE = 400;
+                const docs = chaptersSnap.docs;
 
-            for (let i = 0; i < docs.length; i += BATCH_SIZE) {
-                const batch = db.batch();
-                docs.slice(i, i + BATCH_SIZE).forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
+                for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+                    const batch = db.batch();
+                    docs.slice(i, i + BATCH_SIZE).forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                }
             }
+
+            // 3. Delete the book document itself
+            await bookRef.delete();
+            return res.status(200).json({ message: 'Book and all chapters deleted permanently' });
+        } else {
+            // Soft delete
+            await bookRef.update({
+                isDeleted: true,
+                deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            return res.status(200).json({ message: 'Book moved to recycle bin' });
         }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
-        // 3. Delete the book document itself
-        await bookRef.delete();
-
-        res.status(200).json({ message: 'Book and all chapters deleted successfully' });
+// ─── PUT /:id/restore — Restore book ──────────────────────────────────────────
+router.put('/:id/restore', validateFirebaseIdToken, async (req, res) => {
+    try {
+        await db.collection('books').doc(req.params.id).update({
+            isDeleted: false,
+            deletedAt: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        res.status(200).json({ message: 'Book restored successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -255,22 +281,43 @@ router.put('/:bookId/chapters/:chapterId', validateFirebaseIdToken, async (req, 
     }
 });
 
-// ─── DELETE /:bookId/chapters/:chapterId — Delete chapter ─────────────────────
+// ─── DELETE /:bookId/chapters/:chapterId — Delete chapter (Soft or Hard) ──────
 router.delete('/:bookId/chapters/:chapterId', validateFirebaseIdToken, async (req, res) => {
     try {
         const { bookId, chapterId } = req.params;
+        const { hard } = req.query;
 
-        await db
-            .collection('books')
-            .doc(bookId)
-            .collection('chapters')
-            .doc(chapterId)
-            .delete();
+        const chapterRef = db.collection('books').doc(bookId).collection('chapters').doc(chapterId);
 
-        // Re-sync wordCount after a chapter is removed
+        if (hard === 'true') {
+            await chapterRef.delete();
+            syncBookWordCount(bookId);
+            return res.status(200).json({ message: 'Chapter deleted permanently' });
+        } else {
+            await chapterRef.update({
+                isDeleted: true,
+                deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            });
+            syncBookWordCount(bookId);
+            return res.status(200).json({ message: 'Chapter moved to recycle bin' });
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ─── PUT /:bookId/chapters/:chapterId/restore — Restore chapter ───────────────
+router.put('/:bookId/chapters/:chapterId/restore', validateFirebaseIdToken, async (req, res) => {
+    try {
+        const { bookId, chapterId } = req.params;
+        await db.collection('books').doc(bookId).collection('chapters').doc(chapterId).update({
+            isDeleted: false,
+            deletedAt: admin.firestore.FieldValue.delete(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
         syncBookWordCount(bookId);
-
-        res.status(200).json({ message: 'Chapter deleted successfully' });
+        res.status(200).json({ message: 'Chapter restored successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

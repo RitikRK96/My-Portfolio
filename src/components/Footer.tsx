@@ -24,9 +24,9 @@ const Footer = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-8">
                     {/* Brand */}
                     <div>
-                        <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2 mb-3 w-fit neon-switch">
-                            <Terminal className="w-6 h-6" />
-                            Ritik Kumar
+                        <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2 mb-3 w-fit">
+                            <Terminal className="w-6 h-6 naruto-logo-text drop-shadow-[0_0_6px_rgba(255,165,0,0.6)]" />
+                            <span className="naruto-logo-text">Ritik Kumar</span>
                         </Link>
                         <p className="text-gray-500 text-sm leading-relaxed">
                             Full-Stack Developer &amp; Project Engineer passionate about building impactful digital experiences.
@@ -41,9 +41,9 @@ const Footer = () => {
                                 <li key={l.to}>
                                     <Link
                                         to={l.to}
-                                        className="text-gray-400 hover:text-neon-blue text-sm transition-colors flex items-center gap-1.5 group"
+                                        className="text-gray-400 hover:text-orange-400 text-sm transition-colors flex items-center gap-1.5 group"
                                     >
-                                        <span className="w-1 h-1 rounded-full bg-neon-blue/50 group-hover:bg-neon-blue transition-colors shrink-0" />
+                                        <span className="w-1 h-1 rounded-full bg-orange-400/50 group-hover:bg-orange-400 transition-colors shrink-0" />
                                         {l.label}
                                     </Link>
                                 </li>
@@ -57,15 +57,15 @@ const Footer = () => {
                         <ul className="space-y-3">
                             <li>
                                 <a href="mailto:ritikrk008@gmail.com"
-                                    className="text-gray-400 hover:text-neon-blue text-sm transition-colors flex items-center gap-2 group">
-                                    <Mail size={14} className="text-neon-blue/60 shrink-0" />
+                                    className="text-gray-400 hover:text-orange-400 text-sm transition-colors flex items-center gap-2 group">
+                                    <Mail size={14} className="text-orange-400/60 shrink-0" />
                                     ritikrk008@gmail.com
                                 </a>
                             </li>
                             <li>
                                 <a href="mailto:hello@ritik.world"
-                                    className="text-gray-400 hover:text-neon-blue text-sm transition-colors flex items-center gap-2">
-                                    <Mail size={14} className="text-neon-blue/60 shrink-0" />
+                                    className="text-gray-400 hover:text-orange-400 text-sm transition-colors flex items-center gap-2">
+                                    <Mail size={14} className="text-orange-400/60 shrink-0" />
                                     hello@ritik.world
                                 </a>
                             </li>
@@ -82,7 +82,7 @@ const Footer = () => {
                                     <Github size={16} />
                                 </a>
                                 <a href="https://www.linkedin.com/in/ritikkumar08/" target="_blank" rel="noreferrer"
-                                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-neon-blue hover:border-neon-blue/40 transition-all">
+                                    className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-orange-400 hover:border-orange-500/40 transition-all">
                                     <Linkedin size={16} />
                                 </a>
                             </li>

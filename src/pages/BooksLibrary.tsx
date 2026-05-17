@@ -21,6 +21,7 @@ interface Book {
     wordCount: number;
     updatedAt: string;
     description?: string;
+    isDeleted?: boolean;
 }
 
 // ─── Status config ────────────────────────────────────────────────────────────
@@ -66,13 +67,15 @@ const SkeletonCard = () => (
     </div>
 );
 
-// ─── Book Card ────────────────────────────────────────────────────────────────
 const BookCard = ({
-    book, onOpen, onDelete
+    book, onOpen, onDelete, onRestore, onHardDelete, isDeleted
 }: {
     book: Book;
     onOpen: (id: string) => void;
-    onDelete: (id: string) => void;
+    onDelete?: (id: string) => void;
+    onRestore?: (id: string) => void;
+    onHardDelete?: (id: string) => void;
+    isDeleted?: boolean;
 }) => {
     const s = STATUS[book.status] ?? STATUS.draft;
     const readTime = Math.max(1, Math.ceil((book.wordCount || 0) / 250));
@@ -85,7 +88,7 @@ const BookCard = ({
 
             <div className="flex items-start gap-3 mb-3">
                 <div className="flex-1 min-w-0">
-                    <h3 className="text-[15px] font-bold text-white group-hover:text-cyan-300 transition-colors duration-200 line-clamp-2 leading-snug mb-1">
+                    <h3 className="text-[15px] font-bold text-white group-hover:text-orange-300 transition-colors duration-200 line-clamp-2 leading-snug mb-1">
                         {book.title}
                     </h3>
                     <span className="text-xs text-gray-600">
@@ -126,20 +129,41 @@ const BookCard = ({
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t border-white/[0.05]">
-                <button
-                    onClick={(e) => { e.stopPropagation(); onDelete(book.id); }}
-                    title="Delete book"
-                    className="p-2 text-gray-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
-                >
-                    <Trash2 size={14} />
-                </button>
-                <button
-                    onClick={(e) => { e.stopPropagation(); onOpen(book.id); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-cyan-500/15 text-gray-400 hover:text-cyan-300 border border-white/[0.07] hover:border-cyan-500/25 rounded-xl text-sm font-medium transition-all duration-200"
-                >
-                    <PenLine size={13} />
-                    Open writer
-                </button>
+                {isDeleted ? (
+                    <>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onHardDelete?.(book.id); }}
+                            title="Delete forever"
+                            className="p-2 text-gray-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onRestore?.(book.id); }}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-green-500/15 text-gray-400 hover:text-green-300 border border-white/[0.07] hover:border-green-500/25 rounded-xl text-sm font-medium transition-all duration-200"
+                        >
+                            <Clock size={13} />
+                            Restore
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onDelete?.(book.id); }}
+                            title="Move to recycle bin"
+                            className="p-2 text-gray-800 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onOpen(book.id); }}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/[0.04] hover:bg-orange-500/15 text-gray-400 hover:text-orange-300 border border-white/[0.07] hover:border-orange-500/25 rounded-xl text-sm font-medium transition-all duration-200"
+                        >
+                            <PenLine size={13} />
+                            Open writer
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -194,8 +218,8 @@ const NewBookModal = ({ onClose }: { onClose: () => void }) => {
 
                 <div className="flex items-center justify-between px-6 py-5 border-b border-white/[0.07]">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-500/15 border border-cyan-500/20 flex items-center justify-center">
-                            <BookMarked size={15} className="text-cyan-400" />
+                        <div className="w-8 h-8 rounded-lg bg-orange-500/15 border border-orange-500/20 flex items-center justify-center">
+                            <BookMarked size={15} className="text-orange-400" />
                         </div>
                         <h3 className="text-base font-bold text-white">New Book</h3>
                     </div>
@@ -218,7 +242,7 @@ const NewBookModal = ({ onClose }: { onClose: () => void }) => {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="The name of your book..."
-                            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 outline-none transition-all placeholder:text-gray-700"
+                            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-white text-sm focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 outline-none transition-all placeholder:text-gray-700"
                         />
                     </div>
 
@@ -227,11 +251,33 @@ const NewBookModal = ({ onClose }: { onClose: () => void }) => {
                             Genre{' '}
                             <span className="text-gray-700 normal-case font-normal">(optional)</span>
                         </label>
+                        {/* Predefined genre chips */}
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {[
+                                'Fiction', 'Non-Fiction', 'Fantasy', 'Sci-Fi',
+                                'Mystery', 'Thriller', 'Romance', 'Horror',
+                                'Biography', 'Self-Help', 'History', 'Poetry',
+                            ].map((g) => (
+                                <button
+                                    key={g}
+                                    type="button"
+                                    onClick={() => setGenre(genre === g ? '' : g)}
+                                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                                        genre === g
+                                            ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                                            : 'bg-white/[0.03] border-white/[0.08] text-gray-500 hover:text-gray-300 hover:border-white/20'
+                                    }`}
+                                >
+                                    {g}
+                                </button>
+                            ))}
+                        </div>
+                        {/* Custom genre input */}
                         <input
                             value={genre}
                             onChange={(e) => setGenre(e.target.value)}
-                            placeholder="Fantasy, Sci-Fi, Romance..."
-                            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-white text-sm focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 outline-none transition-all placeholder:text-gray-700"
+                            placeholder="Or type a custom genre..."
+                            className="w-full bg-white/[0.04] border border-white/[0.09] rounded-xl px-4 py-3 text-white text-sm focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20 outline-none transition-all placeholder:text-gray-700"
                         />
                     </div>
 
@@ -246,7 +292,7 @@ const NewBookModal = ({ onClose }: { onClose: () => void }) => {
                         <button
                             type="submit"
                             disabled={submitting || !title.trim()}
-                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-cyan-600 hover:bg-cyan-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-cyan-600/20"
+                            className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-400 text-black disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                         >
                             {submitting
                                 ? <><Loader2 size={14} className="animate-spin" /> Creating...</>
@@ -266,7 +312,9 @@ const BooksLibrary = () => {
     const [books, setBooks] = useState<Book[]>([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [activeTab, setActiveTab] = useState<'library' | 'recycle_bin'>('library');
     const [bookToDelete, setBookToDelete] = useState<string | null>(null);
+    const [bookToHardDelete, setBookToHardDelete] = useState<string | null>(null);
     const navigate = useNavigate();
     const API_URL = `${getApiBase()}/books`;
 
@@ -298,17 +346,56 @@ const BooksLibrary = () => {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            setBooks(prev => prev.filter(b => b.id !== bookId));
-            toast.success('Book deleted');
+            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, isDeleted: true } : b));
+            toast.success('Book moved to recycle bin');
         } catch {
             toast.error('Failed to delete book');
+        } finally {
+            setBookToDelete(null);
         }
     };
 
+    const confirmHardDelete = async () => {
+        const bookId = bookToHardDelete;
+        if (!bookId) return;
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            await fetch(`${API_URL}/${bookId}?hard=true`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            setBooks(prev => prev.filter(b => b.id !== bookId));
+            toast.success('Book permanently deleted');
+        } catch {
+            toast.error('Failed to delete book');
+        } finally {
+            setBookToHardDelete(null);
+        }
+    };
+
+    const handleRestore = async (bookId: string) => {
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            const res = await fetch(`${API_URL}/${bookId}/restore`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            if (!res.ok) throw new Error();
+            setBooks(prev => prev.map(b => b.id === bookId ? { ...b, isDeleted: false } : b));
+            toast.success('Book restored');
+        } catch {
+            toast.error('Failed to restore book');
+        }
+    };
+
+    const activeBooks = books.filter(b => !b.isDeleted);
+    const deletedBooks = books.filter(b => b.isDeleted);
+    const displayedBooks = activeTab === 'library' ? activeBooks : deletedBooks;
+
     // Aggregate stats
-    const totalWords = books.reduce((s, b) => s + (b.wordCount || 0), 0);
-    const published  = books.filter(b => b.status === 'published').length;
-    const inProgress = books.filter(b => b.status === 'in_progress').length;
+    const totalWords = activeBooks.reduce((s, b) => s + (b.wordCount || 0), 0);
+    const published  = activeBooks.filter(b => b.status === 'published').length;
+    const inProgress = activeBooks.filter(b => b.status === 'in_progress').length;
 
     return (
         <div className="flex-1 flex flex-col p-6 sm:p-10 ml-0 sm:ml-[80px]">
@@ -323,7 +410,7 @@ const BooksLibrary = () => {
                         </Link>
                         <div>
                             <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-                                <Library className="text-cyan-400" size={24} />
+                                <Library className="text-orange-400" size={24} />
                                 Books Library
                             </h1>
                             <p className="text-xs text-gray-600 mt-0.5">
@@ -331,19 +418,44 @@ const BooksLibrary = () => {
                             </p>
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors shadow-lg shadow-cyan-600/20 flex-shrink-0"
-                    >
-                        <Plus size={17} />
-                        New Book
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setActiveTab('library')}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                                activeTab === 'library'
+                                    ? "bg-white/10 text-white"
+                                    : "text-gray-500 hover:text-gray-300 hover:bg-white/[0.05]"
+                            )}
+                        >
+                            Library
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('recycle_bin')}
+                            className={clsx(
+                                "px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2",
+                                activeTab === 'recycle_bin'
+                                    ? "bg-red-500/10 text-red-400"
+                                    : "text-gray-500 hover:text-red-400/70 hover:bg-red-500/[0.05]"
+                            )}
+                        >
+                            <Trash2 size={16} />
+                            Recycle Bin ({deletedBooks.length})
+                        </button>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-400 text-black px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors flex-shrink-0 ml-2"
+                        >
+                            <Plus size={17} />
+                            New Book
+                        </button>
+                    </div>
                 </div>
 
-                {!loading && books.length > 0 && (
+                {!loading && activeBooks.length > 0 && activeTab === 'library' && (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                         {[
-                            { icon: BookOpen,    label: 'Total',       value: books.length,            sub: 'books' },
+                            { icon: BookOpen,    label: 'Total',       value: activeBooks.length,            sub: 'books' },
                             { icon: Type,        label: 'Words',       value: fmtWords(totalWords),    sub: 'written' },
                             { icon: TrendingUp,  label: 'In Progress', value: inProgress,              sub: 'books' },
                             { icon: FileText,    label: 'Published',   value: published,               sub: 'books' },
@@ -370,32 +482,41 @@ const BooksLibrary = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
                         {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
                     </div>
-                ) : books.length === 0 ? (
+                ) : displayedBooks.length === 0 ? (
                     /* Empty state */
                     <div className="flex flex-col items-center justify-center py-28 text-center">
                         <div className="w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-5">
-                            <BookOpen size={30} className="text-gray-700" />
+                            {activeTab === 'recycle_bin' ? <Trash2 size={30} className="text-gray-700" /> : <BookOpen size={30} className="text-gray-700" />}
                         </div>
-                        <h3 className="text-lg font-semibold text-gray-300 mb-2">No books yet</h3>
+                        <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                            {activeTab === 'recycle_bin' ? 'Recycle bin is empty' : 'No books yet'}
+                        </h3>
                         <p className="text-sm text-gray-600 max-w-xs mb-7 leading-relaxed">
-                            Start your writing journey. Create your first book and begin writing today.
+                            {activeTab === 'recycle_bin'
+                                ? 'Deleted books will appear here.'
+                                : 'Start your writing journey. Create your first book and begin writing today.'}
                         </p>
-                        <button
-                            onClick={() => setShowModal(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600/15 hover:bg-cyan-600/20 text-cyan-400 border border-cyan-500/25 hover:border-cyan-500/35 rounded-xl font-medium text-sm transition-all"
-                        >
-                            <Plus size={16} />
-                            Create your first book
-                        </button>
+                        {activeTab === 'library' && (
+                            <button
+                                onClick={() => setShowModal(true)}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-cyan-600/15 hover:bg-cyan-600/20 text-cyan-400 border border-cyan-500/25 hover:border-cyan-500/35 rounded-xl font-medium text-sm transition-all"
+                            >
+                                <Plus size={16} />
+                                Create your first book
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                        {books.map(book => (
+                        {displayedBooks.map(book => (
                             <BookCard
                                 key={book.id}
                                 book={book}
                                 onOpen={(id) => navigate(`/admin/book-writer?bookId=${id}`)}
                                 onDelete={handleDelete}
+                                onRestore={handleRestore}
+                                onHardDelete={(id) => setBookToHardDelete(id)}
+                                isDeleted={activeTab === 'recycle_bin'}
                             />
                         ))}
                     </div>
@@ -404,13 +525,22 @@ const BooksLibrary = () => {
 
             {showModal && <NewBookModal onClose={() => setShowModal(false)} />}
 
-            {/* Confirm: Delete book */}
+            {/* Confirm: Delete book (Soft) */}
             <ConfirmModal
                 isOpen={!!bookToDelete}
                 onClose={() => setBookToDelete(null)}
                 onConfirm={confirmDelete}
                 title="Delete Book"
-                message={`Are you sure you want to delete "${books.find(b => b.id === bookToDelete)?.title ?? 'this book'}"? All chapters and content will be permanently removed.`}
+                message={`Are you sure you want to move "${books.find(b => b.id === bookToDelete)?.title ?? 'this book'}" to the recycle bin?`}
+                isDestructive
+            />
+            {/* Confirm: Hard Delete book */}
+            <ConfirmModal
+                isOpen={!!bookToHardDelete}
+                onClose={() => setBookToHardDelete(null)}
+                onConfirm={confirmHardDelete}
+                title="Permanently Delete Book"
+                message={`Are you sure you want to permanently delete "${books.find(b => b.id === bookToHardDelete)?.title ?? 'this book'}"? All chapters and content will be permanently removed. This action cannot be undone.`}
                 isDestructive
             />
         </div>

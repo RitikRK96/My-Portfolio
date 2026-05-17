@@ -36,17 +36,24 @@ const ScrollToTop = () => {
     return (
         <AnimatePresence>
             {isVisible && (
-                <motion.button
+                <motion.div
                     initial={{ opacity: 0, scale: 0.5, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.5, y: 20 }}
                     transition={{ duration: 0.3, ease: 'easeOut' }}
-                    onClick={scrollToTop}
-                    className="fixed bottom-8 right-8 z-[90] w-14 h-14 flex items-center justify-center liquid-glass text-neon-blue transition-colors group cursor-pointer"
-                    aria-label="Scroll to top"
+                    className="fixed bottom-8 right-8 z-[90] w-14 h-14"
                 >
-                    <ArrowUp size={24} className="group-hover:-translate-y-1 transition-transform duration-300" />
-                </motion.button>
+                    {/* Outer rotating dashed ring */}
+                    <span className="absolute -inset-2 rounded-full border border-dashed border-orange-500/30 animate-[spin_6s_linear_infinite] pointer-events-none" />
+                    {/* Button */}
+                    <button
+                        onClick={scrollToTop}
+                        className="relative w-full h-full liquid-glass-naruto flex items-center justify-center group cursor-pointer"
+                        aria-label="Scroll to top"
+                    >
+                        <ArrowUp size={20} className="group-hover:-translate-y-1 transition-transform duration-300" />
+                    </button>
+                </motion.div>
             )}
         </AnimatePresence>
     );

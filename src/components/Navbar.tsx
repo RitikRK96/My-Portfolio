@@ -42,9 +42,9 @@ const Navbar = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex-shrink-0">
-                            <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2 neon-switch">
-                                <Terminal className="w-6 h-6" />
-                                Ritik Kumar
+                            <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2">
+                                <Terminal className="w-6 h-6 naruto-logo-text drop-shadow-[0_0_6px_rgba(255,165,0,0.6)]" />
+                                <span className="naruto-logo-text">Ritik Kumar</span>
                             </Link>
                         </div>
 
@@ -112,7 +112,7 @@ const Navbar = () => {
                                         className={clsx(
                                             'block text-center text-3xl orbitron font-bold tracking-widest py-5 rounded-2xl transition-all border border-transparent',
                                             location.pathname === link.path
-                                                ? 'text-neon-blue bg-neon-blue/10 border-neon-blue/20 shadow-[0_0_15px_rgba(0,255,255,0.15)]'
+                                                ? 'text-white bg-white/10 border-white/20'
                                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
                                         )}
                                     >

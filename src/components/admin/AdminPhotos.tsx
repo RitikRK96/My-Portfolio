@@ -79,7 +79,7 @@ const AdminPhotos = () => {
                 <h2 className="text-2xl font-bold text-white">Manage Photos</h2>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                     <Plus size={20} /> Add Photo
                 </button>
@@ -105,14 +105,14 @@ const AdminPhotos = () => {
 
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in zoom-in duration-200">
-                    <div className="glass-card w-full max-w-lg p-6 rounded-xl shadow-2xl border border-white/10">
+                    <div className="naruto-card w-full max-w-lg p-6 rounded-xl shadow-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-bold text-white">Upload Photo</h3>
                             <button onClick={() => setIsModalOpen(false)}><X className="text-gray-400 hover:text-white transition-colors" /></button>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="border-2 border-dashed border-white/10 rounded-lg h-40 flex items-center justify-center relative hover:border-blue-500/50 transition-colors cursor-pointer bg-black/20">
+                            <div className="border-2 border-dashed border-white/10 rounded-lg h-40 flex items-center justify-center relative hover:border-orange-500/50 transition-colors cursor-pointer bg-black/20">
                                 {imageFile ? (
                                     <div className="text-center">
                                         <p className="text-green-400 font-medium">{imageFile.name}</p>
@@ -138,7 +138,7 @@ const AdminPhotos = () => {
                                     <select
                                         value={category}
                                         onChange={e => setCategory(e.target.value)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-600 transition-colors"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-orange-500 transition-colors"
                                     >
                                         {categories.map(c => <option key={c} value={c} className="bg-gray-800">{c}</option>)}
                                     </select>
@@ -149,10 +149,10 @@ const AdminPhotos = () => {
                                         type="date"
                                         value={date}
                                         onChange={e => setDate(e.target.value)}
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-600 transition-colors"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-orange-500 transition-colors"
                                     />
                                     <div className="text-right mt-1">
-                                        <button type="button" onClick={() => setDate(format(new Date(), 'yyyy-MM-dd'))} className="text-xs text-blue-400 hover:underline">Today</button>
+                                        <button type="button" onClick={() => setDate(format(new Date(), 'yyyy-MM-dd'))} className="text-xs text-orange-400 hover:underline">Today</button>
                                     </div>
                                 </div>
                             </div>
@@ -163,7 +163,7 @@ const AdminPhotos = () => {
                                     <input
                                         value={newCategory}
                                         onChange={e => setNewCategory(e.target.value)}
-                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-600 transition-colors"
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-orange-500 transition-colors"
                                         placeholder="e.g. Travel"
                                     />
                                     <button type="button" onClick={handleAddCategory} className="px-3 bg-white/10 rounded-lg hover:bg-white/20 text-white transition-colors">Add</button>
@@ -176,11 +176,11 @@ const AdminPhotos = () => {
                                     value={caption}
                                     onChange={e => setCaption(e.target.value)}
                                     placeholder="Captured this moment..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-600 transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-orange-500 transition-colors"
                                 />
                             </div>
 
-                            <button type="submit" disabled={uploading} className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold disabled:opacity-50 transition-colors">
+                            <button type="submit" disabled={uploading} className="w-full py-3 bg-orange-500 hover:bg-orange-600 rounded-lg text-white font-bold disabled:opacity-50 transition-colors">
                                 {uploading ? 'Uploading...' : 'Save Photo'}
                             </button>
                         </form>

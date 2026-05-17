@@ -41,17 +41,17 @@ const Songs = () => {
     return (
         <div className="page-container pb-20">
             <div className="text-center mb-16 relative" data-aos="fade-down">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-teal-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
-                <span className="inline-block text-green-400 text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
-                    &lt; Now Playing /&gt;
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-red-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-orange-400 text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; Battle Themes /&gt;
                 </span>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-teal-400">
-                        Music &amp; Vibes
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+                        Ninja Radio
                     </span>
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
-                    What I'm listening to right now.
+                    Tunes for chakra training and missions.
                 </p>
             </div>
 
@@ -60,11 +60,11 @@ const Songs = () => {
                 {playlists.length > 0 && (
                     <div data-aos="fade-up">
                         <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                            <PlayCircle className="text-green-400" /> Playlists
+                            <PlayCircle className="text-orange-400" /> Playlists
                         </h2>
                         <div className="grid gap-6">
                             {playlists.map(playlist => (
-                                <div key={playlist.id} className="glass-card p-4 rounded-xl overflow-hidden aspect-video md:aspect-[3/1]">
+                                <div key={playlist.id} className="naruto-card p-4 rounded-xl overflow-hidden aspect-video md:aspect-[3/1]">
                                     {playlist.url.trim().toLowerCase().startsWith('<iframe') ? (
                                         <div 
                                             className="w-full h-full [&>iframe]:w-full [&>iframe]:h-full [&>iframe]:rounded-lg"
@@ -88,12 +88,12 @@ const Songs = () => {
                 {/* Songs Section */}
                 <div data-aos="fade-up">
                     <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                        <Music className="text-blue-400" /> Current Jam
+                        <Music className="text-red-500" /> Current Jam
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {songs.map((song) => (
-                            <div key={song.id} className="glass-card p-4 rounded-xl flex items-center gap-4 hover:bg-white/10 transition-colors">
-                                <div className="p-3 bg-white/5 rounded-full text-blue-400 shrink-0">
+                            <div key={song.id} className="naruto-card p-4 rounded-xl flex items-center gap-4 hover:bg-white/10 transition-colors">
+                                <div className="p-3 bg-white/5 rounded-full text-red-500 shrink-0">
                                     <Music size={24} />
                                 </div>
                                 <div className="flex-1 min-w-0">

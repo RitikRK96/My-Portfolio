@@ -96,7 +96,7 @@ const AdminBlogs = () => {
                 <h2 className="text-2xl font-bold text-white">Manage Blogs</h2>
                 <button
                     onClick={() => { resetForm(); setIsModalOpen(true); }}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
                     <Plus size={20} /> New Blog
                 </button>
@@ -116,7 +116,7 @@ const AdminBlogs = () => {
                                 <p className="text-gray-400 text-sm line-clamp-1">{blog.content.replace(/[#*`_\[\]()]/g, '').replace(/<br\s*\/?>/gi, ' ')}</p>
                             </div>
                             <div className="flex gap-2">
-                                <button onClick={() => handleEdit(blog)} className="p-2 text-blue-400 hover:bg-blue-500/20 rounded-lg"><Edit2 size={18} /></button>
+                                <button onClick={() => handleEdit(blog)} className="p-2 text-orange-400 hover:bg-orange-500/20 rounded-lg"><Edit2 size={18} /></button>
                                 <button onClick={() => setDeleteId(blog.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg"><Trash2 size={18} /></button>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ const AdminBlogs = () => {
             {/* Edit/Create Modal */}
             {isModalOpen && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in zoom-in duration-200">
-                    <div className="glass-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl border border-white/10">
+                    <div className="naruto-card w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 rounded-xl shadow-2xl border border-white/10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-2xl font-bold text-white">{currentBlog ? 'Edit Blog' : 'New Blog'}</h3>
                             <button onClick={resetForm}><X className="text-gray-400 hover:text-white transition-colors" /></button>
@@ -141,7 +141,7 @@ const AdminBlogs = () => {
                                     required
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none transition-colors"
                                     autoFocus
                                 />
                             </div>
@@ -152,7 +152,7 @@ const AdminBlogs = () => {
                                     type="file"
                                     accept="image/*"
                                     onChange={e => setImageFile(e.target.files?.[0] || null)}
-                                    className="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 transition-colors"
+                                    className="w-full text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-orange-500 file:text-white hover:file:bg-orange-600 transition-colors"
                                 />
                             </div>
 
@@ -179,13 +179,13 @@ const AdminBlogs = () => {
                                     value={formData.content}
                                     onChange={e => setFormData({ ...formData, content: e.target.value })}
                                     placeholder="# Blog Title&#10;&#10;Write your content here..."
-                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-blue-500 outline-none font-mono text-sm transition-colors"
+                                    className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-orange-500 outline-none font-mono text-sm transition-colors"
                                 />
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3">
                                 <button type="button" onClick={resetForm} className="px-4 py-2 rounded-lg text-gray-300 hover:bg-white/10 transition-colors">Cancel</button>
-                                <button type="submit" disabled={submitting} className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold disabled:opacity-50 transition-colors">
+                                <button type="submit" disabled={submitting} className="px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white font-semibold disabled:opacity-50 transition-colors">
                                     {submitting ? 'Saving...' : 'Save Blog'}
                                 </button>
                             </div>

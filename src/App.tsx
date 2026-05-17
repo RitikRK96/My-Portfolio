@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
 import { ProjectProvider } from './context/ProjectContext';
@@ -36,6 +36,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const App = () => {
+  const location = useLocation();
 
   useEffect(() => {
     AOS.init({
@@ -51,11 +52,11 @@ const App = () => {
         <PhotoProvider>
           <SongProvider>
             <ContactProvider>
-              <div className="min-h-screen w-full flex flex-col overflow-x-hidden font-sans text-gray-100 selection:bg-blue-500 selection:text-white">
-                <div className="cyber-bg"></div>
+              <div className="min-h-screen w-full flex flex-col overflow-x-hidden font-sans text-gray-100 selection:bg-orange-500 selection:text-white">
+                <div className="naruto-bg"></div>
                 <div className="grid-bg"></div>
                 <Navbar />
-                <main className="pt-16 flex-1 flex flex-col">
+                <main className={`flex-1 flex flex-col ${(location.pathname === '/admin/books' || location.pathname === '/admin/book-writer') ? 'pt-16' : 'pt-20'}`}>
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/projects" element={<Projects />} />

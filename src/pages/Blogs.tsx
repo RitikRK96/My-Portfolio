@@ -46,13 +46,13 @@ const Blogs = () => {
     return (
         <div className="page-container pb-20">
             <div className="text-center mb-16 relative" data-aos="fade-down">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-neon-blue/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
-                <span className="inline-block text-neon-purple text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
-                    &lt; My Mind /&gt;
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-20 bg-red-500/20 blur-[60px] -z-10 rounded-full pointer-events-none" />
+                <span className="inline-block text-orange-400 text-xs sm:text-sm orbitron tracking-[0.2em] mb-3 opacity-80 uppercase">
+                    &lt; Ninja Scrolls /&gt;
                 </span>
                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-black orbitron mb-4 leading-tight">
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-purple">
-                        Blog &amp; Articles
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-red-500">
+                        Ninja Scrolls &amp; Jutsu Manuals
                     </span>
                 </h1>
                 <p className="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
@@ -69,7 +69,7 @@ const Blogs = () => {
                             <Link
                                 to={`/blogs/${blog.id}`}
                                 key={blog.id}
-                                className="block glass-card rounded-xl overflow-hidden group hover:-translate-y-2 transition-transform duration-300"
+                                className="block naruto-card rounded-xl overflow-hidden group hover:-translate-y-2 transition-transform duration-300"
                                 data-aos="fade-up"
                                 data-aos-delay={Math.min(index * 100, 400)}
                             >
@@ -86,19 +86,19 @@ const Blogs = () => {
                                     )}
                                 </div>
                                 <div className="p-6">
-                                    <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider mb-2 block">
+                                    <span className="text-orange-400 text-xs font-semibold uppercase tracking-wider mb-2 block">
                                         {blog.createdAt
                                             ? format(new Date(blog.createdAt), 'MMM d, yyyy')
                                             : 'Recently'}
                                     </span>
-                                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-blue-300 transition-colors line-clamp-2">
+                                    <h3 className="text-xl font-bold text-white mb-3 group-hover:text-orange-400 transition-colors line-clamp-2">
                                         {blog.title}
                                     </h3>
                                     <p className="text-gray-400 text-sm line-clamp-3 mb-4">
                                         {blog.content.replace(/[#*`_\[\]()]/g, '').replace(/<br\s*\/?>/gi, ' ').slice(0, 150)}...
                                     </p>
-                                    <div className="flex items-center text-blue-400 text-sm font-medium gap-1 group-hover:gap-2 transition-all">
-                                        Read Article <ArrowRight size={16} />
+                                    <div className="flex items-center text-orange-400 text-sm font-medium gap-1 group-hover:gap-2 transition-all">
+                                        Read Scroll <ArrowRight size={16} />
                                     </div>
                                 </div>
                             </Link>

@@ -27,7 +27,7 @@ const AdminDashboard = () => {
             {/* Sidebar (Hover Expandable) */}
             <div className="fixed left-0 top-0 bottom-0 z-[60] bg-[#0a0a0f] border-r border-white/5 transition-all duration-300 ease-in-out w-[80px] hover:w-64 overflow-hidden group flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.5)]">
                 <div className="p-4 flex flex-col h-full pt-8">
-                    <div className="flex items-center gap-4 mb-10 px-2 text-neon-blue w-full overflow-hidden">
+                    <div className="flex items-center gap-4 mb-10 px-2 text-orange-400 w-full overflow-hidden">
                         <LayoutDashboard className="flex-shrink-0" size={28} />
                         <span className="font-bold text-xl orbitron opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
                             Admin Panel
@@ -44,7 +44,7 @@ const AdminDashboard = () => {
                                     className={clsx(
                                         'w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative cursor-pointer',
                                         activeTab === tab.id
-                                            ? 'bg-neon-blue/15 text-neon-blue shadow-[0_0_15px_rgba(0,255,255,0.15)] border border-neon-blue/30'
+                                            ? 'bg-orange-500/10 text-orange-400 shadow-[0_0_15px_rgba(255,165,0,0.15)] border border-orange-500/30'
                                             : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent'
                                     )}
                                 >
