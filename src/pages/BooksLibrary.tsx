@@ -202,7 +202,7 @@ const NewBookModal = ({ onClose }: { onClose: () => void }) => {
             const book = await res.json();
             toast.success('Book created!');
             onClose();
-            navigate(`/admin/book-writer?bookId=${book.id}`);
+            navigate(`/admin/books/${book.id}`);
         } catch {
             toast.error('Failed to create book');
             setSubmitting(false);
@@ -403,7 +403,7 @@ const BooksLibrary = () => {
                 <div className="flex items-start justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">
                         <Link
-                            to="/admin"
+                            to="/"
                             className="p-2 text-gray-600 hover:text-white hover:bg-white/10 rounded-xl transition-colors"
                         >
                             <ChevronLeft size={20} />
@@ -512,7 +512,7 @@ const BooksLibrary = () => {
                             <BookCard
                                 key={book.id}
                                 book={book}
-                                onOpen={(id) => navigate(`/admin/book-writer?bookId=${id}`)}
+                                onOpen={(id) => navigate(`/admin/books/${id}`)}
                                 onDelete={handleDelete}
                                 onRestore={handleRestore}
                                 onHardDelete={(id) => setBookToHardDelete(id)}

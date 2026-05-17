@@ -28,6 +28,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import BookWriter from './pages/BookWriter';
 import BooksLibrary from './pages/BooksLibrary';
 
+import BookDetail from './pages/BookDetail';
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   if (loading) return <div>Loading...</div>;
@@ -56,7 +58,7 @@ const App = () => {
                 <div className="naruto-bg"></div>
                 <div className="grid-bg"></div>
                 <Navbar />
-                <main className={`flex-1 flex flex-col ${(location.pathname === '/admin/books' || location.pathname === '/admin/book-writer') ? 'pt-16' : 'pt-20'}`}>
+                <main className={`flex-1 flex flex-col ${(location.pathname === '/admin/books' || location.pathname.startsWith('/admin/books/') || location.pathname === '/admin/book-writer') ? 'pt-16' : 'pt-20'}`}>
                   <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/projects" element={<Projects />} />
@@ -81,6 +83,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <BooksLibrary />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/books/:bookId"
+                      element={
+                        <ProtectedRoute>
+                          <BookDetail />
                         </ProtectedRoute>
                       }
                     />

@@ -1019,21 +1019,52 @@ const BookWriter = () => {
     // ── Load book ─────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!bookId) { navigate('/admin/books'); return; }
+        let cancelled = false;
         // Meta is now loaded from chapters
         (async () => {
             try {
                 const res = await fetch(`${API_URL}/${bookId}`);
                 if (!res.ok) throw new Error('Not found');
                 const data = await res.json();
+                if (cancelled) return;
                 setBook(data);
                 const sorted = [...(data.chapters ?? [])].sort((a: Chapter, b: Chapter) => a.order - b.order);
                 setChapters(sorted);
-                if (sorted.length > 0) setActiveChapterId(sorted[0].id);
+                const queryChapterId = searchParams.get('chapterId');
+                const shouldCreateNew  = searchParams.get('newChapter') === 'true';
+                if (shouldCreateNew) {
+                    // create a new chapter immediately after load (guard against StrictMode double-fire)
+                    setLoading(false);
+                    const token = await auth.currentUser?.getIdToken();
+                    const nonDeleted = sorted.filter((c: Chapter) => !c.isDeleted);
+                    const res2 = await fetch(`${API_URL}/${bookId}/chapters`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ title: `Chapter ${nonDeleted.length + 1}`, content: '', order: nonDeleted.length }),
+                    });
+                    if (cancelled) return;
+                    if (res2.ok) {
+                        const newChapter: Chapter = await res2.json();
+                        setChapters(prev => [...prev, newChapter]);
+                        setActiveChapterId(newChapter.id);
+                        toast.success('New chapter created');
+                    } else {
+                        if (sorted.length > 0) setActiveChapterId(sorted[0].id);
+                    }
+                    return;
+                }
+                if (queryChapterId && sorted.some((c: Chapter) => c.id === queryChapterId)) {
+                    setActiveChapterId(queryChapterId);
+                } else if (sorted.length > 0) {
+                    setActiveChapterId(sorted[0].id);
+                }
             } catch {
+                if (cancelled) return;
                 toast.error('Failed to load book');
                 navigate('/admin/books');
-            } finally { setLoading(false); }
+            } finally { if (!cancelled) setLoading(false); }
         })();
+        return () => { cancelled = true; };
     }, [bookId]); // eslint-disable-line
 
     // ── TipTap Editor ─────────────────────────────────────────────────────────
@@ -1421,7 +1452,7 @@ const BookWriter = () => {
                 )}>
                     {/* Header */}
                     <div className={clsx('h-[52px] border-b border-white/[0.06] flex items-center', sidebarOpen ? 'px-3 gap-2' : 'flex-col justify-center gap-1 py-1')}>
-                        <RouterLink to="/admin/books" title="Back to library"
+                        <RouterLink to={`/admin/books/${bookId}`} title="Back to book details"
                             className="p-1 text-gray-600 hover:text-white hover:bg-white/10 rounded-lg transition-colors flex-shrink-0">
                             <ChevronLeft size={sidebarOpen ? 16 : 14} />
                         </RouterLink>

@@ -30,8 +30,8 @@ const Navbar = () => {
     ];
 
     const adminLinks = [
-        { name: 'Dashboard', path: '/admin' },
         { name: 'Books', path: '/admin/books' },
+        { name: 'Dashboard', path: '/admin' },
     ];
 
     const links = user ? [...navLinks, ...adminLinks] : navLinks;
