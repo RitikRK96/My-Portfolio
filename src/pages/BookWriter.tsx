@@ -81,8 +81,8 @@ const M_LEFT   = 90;
 const M_RIGHT  = 90;
 
 const FONTS = [
-    { label: 'Georgia',         value: 'Georgia, serif' },
     { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+    { label: 'Georgia',         value: 'Georgia, serif' },
     { label: 'Palatino',        value: '"Palatino Linotype", Palatino, serif' },
     { label: 'Arial',           value: 'Arial, sans-serif' },
     { label: 'Calibri',         value: 'Calibri, sans-serif' },
@@ -553,7 +553,7 @@ const EditorToolbar = ({
     dropCap, setDropCap, showTOC, setShowTOC,
     pomodoroTime, pomodoroRunning, setPomodoroRunning, resetPomodoro,
     wordGoal, setWordGoal, chapterWords,
-    onExportTxt, onExportMd, onCopyClipboard,
+    onExportTxt, onExportMd, onCopyClipboard, onExportChapterPdf, onExportBookPdf,
 }: {
     editor: ReturnType<typeof useEditor>;
     zoom: number; setZoom: (n: number) => void;
@@ -575,6 +575,7 @@ const EditorToolbar = ({
     setPomodoroRunning: (b: boolean) => void; resetPomodoro: () => void;
     wordGoal: number; setWordGoal: (n: number) => void; chapterWords: number;
     onExportTxt: () => void; onExportMd: () => void; onCopyClipboard: () => void;
+    onExportChapterPdf: () => void; onExportBookPdf: () => void;
 }) => {
     const [openPicker, setOpenPicker] = useState<'color' | 'highlight' | 'tableInsert' | 'export' | null>(null);
     const [showLinkDialog, setShowLinkDialog] = useState(false);
@@ -596,7 +597,7 @@ const EditorToolbar = ({
     return (
         <>
         {showLinkDialog && <LinkDialog editor={editor} onClose={() => setShowLinkDialog(false)} />}
-        <div className="border-b border-white/[0.06] bg-[#09090f] flex-shrink-0" onClick={() => setOpenPicker(null)}>
+        <div className="border-b border-white/[0.06] bg-[#09090f] flex-shrink-0" onMouseDown={() => setOpenPicker(null)}>
 
             {/* ── Row 1: History · Font · Headings · Spacing · Zoom · Utilities ── */}
             <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-white/[0.04] flex-wrap">
@@ -642,7 +643,7 @@ const EditorToolbar = ({
                 <TDivider />
 
                 {/* Text Color */}
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
                     <TBtn onClick={() => setOpenPicker(openPicker === 'color' ? null : 'color')} active={openPicker === 'color'} title="Text color">
                         <div className="flex flex-col items-center gap-0.5">
                             <TypeIcon size={11} />
@@ -657,7 +658,7 @@ const EditorToolbar = ({
                 </div>
 
                 {/* Highlight */}
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
                     <TBtn onClick={() => setOpenPicker(openPicker === 'highlight' ? null : 'highlight')} active={openPicker === 'highlight'} title="Highlight">
                         <Highlighter size={13} />
                     </TBtn>
@@ -699,7 +700,7 @@ const EditorToolbar = ({
                 <TBtn onClick={() => editor.chain().focus().setHardBreak().run()} title="Hard break"><CornerDownLeft size={13} /></TBtn>
 
                 {/* Table */}
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
                     <TBtn onClick={() => setOpenPicker(openPicker === 'tableInsert' ? null : 'tableInsert')} title="Insert table"><LayoutGrid size={13} /></TBtn>
                     {openPicker === 'tableInsert' && <TableInsertPopover editor={editor} onClose={() => setOpenPicker(null)} />}
                 </div>
@@ -766,21 +767,32 @@ const EditorToolbar = ({
                 <TDivider />
 
                 {/* Export */}
-                <div className="relative flex-shrink-0">
+                <div className="relative flex-shrink-0" onMouseDown={(e) => e.stopPropagation()}>
                     <TBtn onClick={() => setOpenPicker(openPicker === 'export' ? null : 'export')} title="Export chapter">
                         <Download size={13} />
                     </TBtn>
                     {openPicker === 'export' && (
-                        <div className="absolute z-50 top-full mt-1 right-0 py-1 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl min-w-[140px]"
+                        <div className="absolute z-50 top-full mt-1 right-0 py-1 bg-[#0d0d1a] border border-white/10 rounded-xl shadow-2xl min-w-[170px]"
                             onMouseDown={(e) => e.stopPropagation()}>
+                            <p className="text-[9px] text-gray-700 uppercase tracking-wider px-3.5 pt-2 pb-1">Text</p>
                             {[
                                 { label: 'Copy as plain text', icon: <Copy size={12} />, action: () => { onCopyClipboard(); setOpenPicker(null); } },
                                 { label: 'Export as .txt',     icon: <FileText size={12} />, action: () => { onExportTxt(); setOpenPicker(null); } },
                                 { label: 'Export as .md',      icon: <FileText size={12} />, action: () => { onExportMd(); setOpenPicker(null); } },
-                                { label: 'Print / PDF',        icon: <Printer size={12} />, action: () => { window.print(); setOpenPicker(null); } },
                             ].map((item) => (
                                 <button key={item.label} onClick={item.action}
                                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/[0.05] transition-colors">
+                                    {item.icon}{item.label}
+                                </button>
+                            ))}
+                            <div className="h-px bg-white/[0.06] my-1 mx-2" />
+                            <p className="text-[9px] text-gray-700 uppercase tracking-wider px-3.5 pt-1 pb-1">PDF / Print</p>
+                            {[
+                                { label: 'Export chapter as PDF', icon: <Printer size={12} />, action: () => { onExportChapterPdf(); setOpenPicker(null); } },
+                                { label: 'Export full book PDF',  icon: <BookOpen size={12} />, action: () => { onExportBookPdf(); setOpenPicker(null); } },
+                            ].map((item) => (
+                                <button key={item.label} onClick={item.action}
+                                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-cyan-400/80 hover:text-cyan-300 hover:bg-cyan-500/[0.07] transition-colors">
                                     {item.icon}{item.label}
                                 </button>
                             ))}
@@ -802,8 +814,9 @@ const SortableChapterItem = ({
     meta: ChapterMeta | undefined;
 }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
-    const status = meta?.status || chapter.status || 'draft';
-    const sc = STATUS_CONFIG[status];
+    const status = (meta?.status || chapter.status || 'draft') as ChapterStatus;
+    // Guard: fall back to 'draft' config if status key is not recognised
+    const sc = STATUS_CONFIG[status] ?? STATUS_CONFIG['draft'];
     const dotColor = meta?.color || chapter.color || CHAPTER_COLORS[0];
 
     return (
@@ -970,9 +983,6 @@ const BookWriter = () => {
         try { return JSON.parse(localStorage.getItem('bw-bookmarks') || '[]'); } catch { return []; }
     });
 
-    // ── Chapter metadata ──────────────────────────────────────────────────────
-    const [chapterMeta, setChapterMeta] = useState<Record<string, ChapterMeta>>({});
-
     // ── Refs ──────────────────────────────────────────────────────────────────
     const saveTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
     const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -994,9 +1004,6 @@ const BookWriter = () => {
     useEffect(() => { localStorage.setItem('bw-density', density); }, [density]);
     useEffect(() => { localStorage.setItem('bw-wordgoal', String(wordGoal)); }, [wordGoal]);
     useEffect(() => { localStorage.setItem('bw-bookmarks', JSON.stringify(bookmarks)); }, [bookmarks]);
-    useEffect(() => {
-        if (bookId) localStorage.setItem(`bw-meta-${bookId}`, JSON.stringify(chapterMeta));
-    }, [chapterMeta, bookId]);
 
     const activeChapter = chapters.find(c => c.id === activeChapterId) ?? null;
 
@@ -1012,8 +1019,7 @@ const BookWriter = () => {
     // ── Load book ─────────────────────────────────────────────────────────────
     useEffect(() => {
         if (!bookId) { navigate('/admin/books'); return; }
-        // Load saved chapter meta
-        try { setChapterMeta(JSON.parse(localStorage.getItem(`bw-meta-${bookId}`) || '{}')); } catch {}
+        // Meta is now loaded from chapters
         (async () => {
             try {
                 const res = await fetch(`${API_URL}/${bookId}`);
@@ -1280,6 +1286,19 @@ const BookWriter = () => {
         setTimeout(() => { if (scrollAreaRef.current) scrollAreaRef.current.scrollTop = bm.scrollPos; }, 200);
     };
 
+    const updateActiveChapterMeta = async (fields: Partial<ChapterMeta>) => {
+        if (!activeChapterId || !bookId) return;
+        setChapters(prev => prev.map(c => c.id === activeChapterId ? { ...c, ...fields } : c));
+        try {
+            const token = await auth.currentUser?.getIdToken();
+            await fetch(`${API_URL}/${bookId}/chapters/${activeChapterId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(fields),
+            });
+        } catch { toast.error('Failed to save chapter settings'); }
+    };
+
     // ── Export ────────────────────────────────────────────────────────────────
     const onExportTxt = () => {
         if (!activeChapter || !editor) return;
@@ -1295,6 +1314,22 @@ const BookWriter = () => {
         catch { toast.error('Copy failed'); }
     };
 
+    /** Open a popup with the backend-rendered chapter HTML, which auto-triggers print → Save as PDF */
+    const onExportChapterPdf = () => {
+        if (!activeChapter || !bookId) { toast.error('No chapter selected'); return; }
+        const url = `${API_URL}/${bookId}/chapters/${activeChapter.id}/export/html`;
+        const w = window.open(url, '_blank', 'width=900,height=700,menubar=yes,toolbar=yes');
+        if (!w) toast.error('Allow pop-ups to export PDF');
+    };
+
+    /** Open a popup with the backend-rendered full book HTML (all chapters), triggers print → Save as PDF */
+    const onExportBookPdf = () => {
+        if (!bookId) return;
+        const url = `${API_URL}/${bookId}/export/html`;
+        const w = window.open(url, '_blank', 'width=900,height=700,menubar=yes,toolbar=yes');
+        if (!w) toast.error('Allow pop-ups to export PDF');
+    };
+
     // ── Stats ─────────────────────────────────────────────────────────────────
     const activeChaptersList  = chapters.filter(c => !c.isDeleted);
     const deletedChaptersList = chapters.filter(c => c.isDeleted);
@@ -1308,7 +1343,7 @@ const BookWriter = () => {
     const readLevel    = activeChapter ? getReadingLevel(activeChapter.content ?? '') : '—';
     const readTime     = Math.max(1, Math.ceil(totalWords / 250));
 
-    const activeMeta = activeChapterId ? (chapterMeta[activeChapterId] || { status: 'draft' as ChapterStatus, synopsis: '', color: CHAPTER_COLORS[0] }) : null;
+    const activeMeta = activeChapterId ? { status: activeChapter?.status || 'draft', synopsis: activeChapter?.synopsis || '', color: activeChapter?.color || CHAPTER_COLORS[0] } : null;
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center bg-[#050505]">
@@ -1445,7 +1480,7 @@ const BookWriter = () => {
                                                             isActive={activeChapterId === ch.id}
                                                             onClick={(c) => setActiveChapterId(c.id)}
                                                             onDelete={(id) => setChapterToDelete(id)}
-                                                            meta={chapterMeta[ch.id]} />
+                                                            meta={undefined} />
                                                     ))}
                                                 </div>
                                             </SortableContext>
@@ -1518,7 +1553,7 @@ const BookWriter = () => {
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Status</p>
                                                 <select value={activeMeta.status}
-                                                    onChange={(e) => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, status: e.target.value as ChapterStatus } }))}
+                                                    onChange={(e) => updateActiveChapterMeta({ status: e.target.value as ChapterStatus })}
                                                     className="w-full appearance-none bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 cursor-pointer">
                                                     {Object.entries(STATUS_CONFIG).map(([k, v]) => <option key={k} value={k} className="bg-[#0d0d1a]">{v.label}</option>)}
                                                 </select>
@@ -1529,7 +1564,7 @@ const BookWriter = () => {
                                                 <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Chapter color</p>
                                                 <div className="flex gap-1.5 flex-wrap">
                                                     {CHAPTER_COLORS.map((c) => (
-                                                        <button key={c} onClick={() => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, color: c } }))}
+                                                        <button key={c} onClick={() => updateActiveChapterMeta({ color: c })}
                                                             className={clsx('w-4 h-4 rounded-full border-2 transition-all', activeMeta.color === c ? 'border-white scale-110' : 'border-transparent hover:scale-110')}
                                                             style={{ backgroundColor: c }} />
                                                     ))}
@@ -1540,7 +1575,7 @@ const BookWriter = () => {
                                             <div>
                                                 <p className="text-[9px] font-bold text-gray-700 uppercase tracking-[0.12em] mb-1">Synopsis</p>
                                                 <textarea value={activeMeta.synopsis || ''}
-                                                    onChange={(e) => setChapterMeta(prev => ({ ...prev, [activeChapterId!]: { ...activeMeta, synopsis: e.target.value } }))}
+                                                    onChange={(e) => updateActiveChapterMeta({ synopsis: e.target.value })}
                                                     placeholder="Brief summary of this chapter…"
                                                     rows={3}
                                                     className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg px-2.5 py-1.5 text-xs text-white outline-none focus:border-cyan-500/40 placeholder:text-gray-700 resize-none" />
@@ -1610,6 +1645,7 @@ const BookWriter = () => {
                                 setPomodoroRunning={setPomodoroRunning} resetPomodoro={resetPomodoro}
                                 wordGoal={wordGoal} setWordGoal={setWordGoal} chapterWords={chapterWords}
                                 onExportTxt={onExportTxt} onExportMd={onExportMd} onCopyClipboard={onCopyClipboard}
+                                onExportChapterPdf={onExportChapterPdf} onExportBookPdf={onExportBookPdf}
                             />
                         )}
 
