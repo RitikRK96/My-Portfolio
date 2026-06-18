@@ -1,24 +1,26 @@
-import { useState } from 'react';
-import { LayoutDashboard, FolderKanban, PenTool, Image, Music, Mail, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, PenTool, Image, Mail, BookOpen } from 'lucide-react';
 import clsx from 'clsx';
 
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 // We will import these later as we create them
 import AdminProjects from '../components/admin/AdminProjects';
 import AdminBlogs from '../components/admin/AdminBlogs';
 import AdminPhotos from '../components/admin/AdminPhotos';
-import AdminSongs from '../components/admin/AdminSongs';
 import AdminContacts from '../components/admin/AdminContacts';
 
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState('projects');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'projects';
+
+    const setActiveTab = (tabId: string) => {
+        setSearchParams({ tab: tabId });
+    };
 
     const tabs = [
         { id: 'projects', label: 'Projects', icon: FolderKanban },
         { id: 'blogs', label: 'Blogs', icon: PenTool },
         { id: 'photos', label: 'Photos', icon: Image },
-        { id: 'songs', label: 'Songs', icon: Music },
         { id: 'contact', label: 'Messages', icon: Mail },
     ];
 
@@ -78,7 +80,6 @@ const AdminDashboard = () => {
                         {activeTab === 'projects' && <AdminProjects />}
                         {activeTab === 'blogs' && <AdminBlogs />}
                         {activeTab === 'photos' && <AdminPhotos />}
-                        {activeTab === 'songs' && <AdminSongs />}
                         {activeTab === 'contact' && <AdminContacts />}
                     </div>
                 </div>

@@ -58,25 +58,25 @@ const Login = () => {
                 </div>
 
                 <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold tracking-wider text-orange-400 font-serif">Gate of the Shinobi</h2>
+                    <h2 className="text-2xl font-bold tracking-wider text-orange-400 font-serif">Admin Portal</h2>
                     <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">Admin Access Portal</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Chakra Identity (Email)</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Admin Email</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:border-orange-500 focus:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all"
-                            placeholder="shinobi@village.com"
+                            placeholder="admin@domain.com"
                             required
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Secret Seal (Password)</label>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2">Password</label>
                         <input
                             type="password"
                             value={password}
@@ -100,11 +100,11 @@ const Login = () => {
 
                         <span className="relative flex items-center justify-center gap-2 tracking-widest text-sm uppercase">
                             {isSubmitting ? (
-                                <>Unlocking Chakra...</>
+                                <>Authenticating...</>
                             ) : (
                                 <>
                                     <Shield size={16} className="text-white/80 group-hover:scale-110 transition-transform" />
-                                    Break Secret Seal
+                                    Sign In
                                 </>
                             )}
                         </span>

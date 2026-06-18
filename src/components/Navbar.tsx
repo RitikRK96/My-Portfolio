@@ -25,7 +25,6 @@ const Navbar = () => {
         { name: 'Projects', path: '/projects' },
         { name: 'Blogs', path: '/blogs' },
         { name: 'Photos', path: '/photos' },
-        // { name: 'Songs', path: '/songs' }, // Hidden for normal users
         { name: 'Contact', path: '/contact' },
     ];
 
@@ -42,7 +41,7 @@ const Navbar = () => {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex-shrink-0">
-                            <Link to="/" className="text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2">
+                            <Link to="/" className="text-xl sm:text-2xl font-black orbitron tracking-tighter transition-all hover:scale-105 flex items-center gap-2">
                                 <Terminal className="w-6 h-6 naruto-logo-text drop-shadow-[0_0_6px_rgba(255,165,0,0.6)]" />
                                 <span className="naruto-logo-text">Ritik Kumar</span>
                             </Link>
@@ -95,22 +94,22 @@ const Navbar = () => {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="fixed inset-0 z-[49] md:hidden bg-[#0a0a0f]/95 backdrop-blur-2xl flex flex-col items-center justify-center pt-16"
+                        className="fixed inset-0 z-[49] md:hidden bg-[#0a0a0f]/95 backdrop-blur-2xl flex flex-col items-center justify-start pt-20 overflow-y-auto"
                     >
-                        <div className="flex flex-col items-center space-y-4 w-full px-8 max-h-[80vh] overflow-y-auto pb-10">
+                        <div className="flex flex-col items-center space-y-3 w-full px-6 pb-10 max-w-sm mx-auto">
                             {links.map((link, i) => (
                                 <motion.div
                                     key={link.name}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="w-full max-w-sm"
+                                    transition={{ delay: i * 0.05 }}
+                                    className="w-full"
                                 >
                                     <Link
                                         to={link.path}
                                         onClick={() => setIsOpen(false)}
                                         className={clsx(
-                                            'block text-center text-3xl orbitron font-bold tracking-widest py-5 rounded-2xl transition-all border border-transparent',
+                                            'block text-center text-xl sm:text-2xl orbitron font-bold tracking-widest py-3 sm:py-4 rounded-xl transition-all border border-transparent',
                                             location.pathname === link.path
                                                 ? 'text-white bg-white/10 border-white/20'
                                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -124,12 +123,12 @@ const Navbar = () => {
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: links.length * 0.1 }}
-                                    className="w-full max-w-sm pt-6 mt-2 border-t border-white/10"
+                                    transition={{ delay: links.length * 0.05 }}
+                                    className="w-full pt-4 mt-2 border-t border-white/10"
                                 >
                                     <button
                                         onClick={() => { logout(); setIsOpen(false); }}
-                                        className="w-full text-center text-2xl font-bold py-5 rounded-2xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
+                                        className="w-full text-center text-lg sm:text-xl font-bold py-3 sm:py-4 rounded-xl text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-all border border-transparent hover:border-red-500/20"
                                     >
                                         Logout
                                     </button>

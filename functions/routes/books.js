@@ -240,7 +240,7 @@ router.post('/', validateFirebaseIdToken, async (req, res) => {
 // ─── PUT /:id — Update book ───────────────────────────────────────────────────
 router.put('/:id', validateFirebaseIdToken, async (req, res) => {
     try {
-        const { title, description, coverImage, genre, status } = req.body;
+        const { title, description, coverImage, genre, status, characters, outline, scratchpad } = req.body;
 
         const VALID_STATUSES = ['draft', 'in_progress', 'published', 'archived'];
 
@@ -252,6 +252,9 @@ router.put('/:id', validateFirebaseIdToken, async (req, res) => {
         if (description !== undefined) updateData.description = description;
         if (coverImage !== undefined)  updateData.coverImage  = coverImage;
         if (genre !== undefined)       updateData.genre       = genre.trim();
+        if (characters !== undefined)  updateData.characters  = characters;
+        if (outline !== undefined)     updateData.outline     = outline;
+        if (scratchpad !== undefined)  updateData.scratchpad  = scratchpad;
 
         if (status !== undefined) {
             if (!VALID_STATUSES.includes(status)) {

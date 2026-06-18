@@ -193,6 +193,15 @@ body {
   scrollbar-color: #ff0000 #0a0a0f;
 }
 
+/* Hide scrollbar utility class */
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+.scrollbar-none {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
 /* Shared page container used by non-home pages */
 .page-container {
   max-width: 80rem;
@@ -202,9 +211,19 @@ body {
   padding-right: 1rem;
 }
 
-/* Force pointer cursor on all interactive elements */
-button, a, [role="button"] {
-  cursor: pointer !important;
+/* Custom Sleek High-Contrast Cursors globally */
+html, body {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20viewBox='0%200%2024%2024'%20fill='none'%3E%3Cpath%20d='M4%202v16.3l4.5-4.5h6.3L4%202z'%20fill='black'%20stroke='black'%20stroke-width='2.5'%20stroke-linejoin='round'/%3E%3Cpath%20d='M4%202v16.3l4.5-4.5h6.3L4%202z'%20fill='white'%20stroke='white'%20stroke-width='1'%20stroke-linejoin='round'/%3E%3Cpath%20d='M5.2%204.5v11.5l3.2-3.2h4.5L5.2%204.5z'%20fill='%2300ffff'/%3E%3C/svg%3E") 4 2, default;
+}
+
+/* Custom Sleek High-Contrast Pointer cursor on all interactive elements */
+button, a, [role="button"], select, input[type="submit"], input[type="button"], .cursor-pointer {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20width='24'%20height='24'%20fill='none'%3E%3Cpath%20d='M13.5%2010.5V6c0-1.66-1.34-3-3-3s-3%201.34-3%203v6.39L6.5%2012c-.55%200-1.05.22-1.41.59L4%2013.01l7.5%207.5c.34.34.8.54%201.28.54h5.72c1.1%200%202-.9%202-2V14c0-1.1-.9-2-2-2h-3.5z'%20fill='black'%20stroke='black'%20stroke-width='2.5'%20stroke-linejoin='round'/%3E%3Cpath%20d='M13.5%2010.5V6c0-1.66-1.34-3-3-3s-3%201.34-3%203v6.39L6.5%2012c-.55%200-1.05.22-1.41.59L4%2013.01l7.5%207.5c.34.34.8.54%201.28.54h5.72c1.1%200%202-.9%202-2V14c0-1.1-.9-2-2-2h-3.5z'%20fill='white'%20stroke='white'%20stroke-width='1'%20stroke-linejoin='round'/%3E%3Cpath%20d='M13.5%2010.5V6c0-1.66-1.34-3-3-3s-3%201.34-3%203v6.39L6.5%2012c-.55%200-1.05.22-1.41.59L4%2013.01l7.5%207.5c.34.34.8.54%201.28.54h5.72c1.1%200%202-.9%202-2V14c0-1.1-.9-2-2-2h-3.5z'%20fill='%23ff7b00'/%3E%3C/svg%3E") 10 3, pointer !important;
+}
+
+/* Force high-contrast text cursor on all text fields */
+input[type="text"], input[type="email"], input[type="password"], textarea, [contenteditable], .cursor-text {
+  cursor: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='16'%20height='24'%20viewBox='0%200%2016%2024'%3E%3Cpath%20d='M4%202h8v2H9v16h3v2H4v-2h3V4H4V2z'%20fill='none'%20stroke='white'%20stroke-width='2'/%3E%3Cpath%20d='M4%202h8v2H9v16h3v2H4v-2h3V4H4V2z'%20fill='black'/%3E%3C/svg%3E") 8 12, text !important;
 }
 
 /* ── Liquid Glass Fluid Shape ── */
@@ -283,6 +302,7 @@ button, a, [role="button"] {
 .naruto-text {
   background: linear-gradient(to right, #ffffff, #ffd9b3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: none;
 }

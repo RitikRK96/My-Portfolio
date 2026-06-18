@@ -70,10 +70,10 @@ const ContactSection = () => {
                         </div>
                         <div>
                             <h3 className="font-bold text-white mb-1">Location</h3>
-                            <p className="text-gray-400 text-sm">Hidden Leaf Village</p>
+                            <p className="text-gray-400 text-sm">Bengaluru, India</p>
                             <span className="inline-flex items-center gap-1.5 mt-2 text-xs text-green-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                Open to S-Rank remote missions
+                                Open to remote opportunities
                             </span>
                         </div>
                     </div>

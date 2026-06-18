@@ -26,7 +26,7 @@ interface PhotoContextType {
     allPhotos: Photo[];
     allLoading: boolean;
     refreshAll: () => Promise<void>;
-    addPhoto: (data: Omit<Photo, 'id' | 'createdAt' | 'imageUrl'>, imageFile: File) => Promise<void>;
+    addPhoto: (data: Omit<Photo, 'id' | 'createdAt' | 'imageUrl'>, imageFile?: File | null, googleDriveUrl?: string) => Promise<void>;
     deletePhoto: (id: string) => Promise<void>;
 }
 
@@ -124,9 +124,31 @@ export const PhotoProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     useEffect(() => { fetchByCategory('All'); }, []);
 
-    const addPhoto = async (data: Omit<Photo, 'id' | 'createdAt' | 'imageUrl'>, imageFile: File) => {
+    const getGoogleDriveDirectLink = (url: string): string => {
+        const regex = /\/file\/d\/([a-zA-Z0-9_-]+)\/(?:view|edit|preview)?|id=([a-zA-Z0-9_-]+)/;
+        const match = url.match(regex);
+        if (match) {
+            const fileId = match[1] || match[2];
+            return `https://drive.google.com/uc?export=view&id=${fileId}`;
+        }
+        return url;
+    };
+
+    const addPhoto = async (
+        data: Omit<Photo, 'id' | 'createdAt' | 'imageUrl'>,
+        imageFile?: File | null,
+        googleDriveUrl?: string
+    ) => {
         try {
-            const imageUrl = await uploadFile(imageFile, 'photos');
+            let imageUrl = '';
+            if (imageFile) {
+                imageUrl = await uploadFile(imageFile, 'photos');
+            } else if (googleDriveUrl) {
+                imageUrl = getGoogleDriveDirectLink(googleDriveUrl);
+            } else {
+                throw new Error('Either an image file or a Google Drive URL is required');
+            }
+
             const token = await auth.currentUser?.getIdToken();
             const response = await fetch(API_URL, {
                 method: 'POST',

@@ -21,6 +21,8 @@ const AdminPhotos = () => {
     useEffect(() => { refreshAll(); }, []);
 
     // Form
+    const [uploadMode, setUploadMode] = useState<'file' | 'drive'>('drive');
+    const [googleDriveUrl, setGoogleDriveUrl] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [category, setCategory] = useState(DEFAULT_CATEGORIES[0]);
     const [newCategory, setNewCategory] = useState('');
@@ -46,14 +48,20 @@ const AdminPhotos = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!imageFile) return toast.error('Please select an image');
+        if (uploadMode === 'file' && !imageFile) return toast.error('Please select an image file');
+        if (uploadMode === 'drive' && !googleDriveUrl) return toast.error('Please enter a Google Drive link');
 
         setUploading(true);
         try {
-            await addPhoto({ category, caption, date }, imageFile);
+            if (uploadMode === 'file') {
+                await addPhoto({ category, caption, date }, imageFile, '');
+            } else {
+                await addPhoto({ category, caption, date }, null, googleDriveUrl);
+            }
 
             setIsModalOpen(false);
             setImageFile(null);
+            setGoogleDriveUrl('');
             setCaption('');
         } catch (error) {
             // Error handled in context
@@ -112,25 +120,67 @@ const AdminPhotos = () => {
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="border-2 border-dashed border-white/10 rounded-lg h-40 flex items-center justify-center relative hover:border-orange-500/50 transition-colors cursor-pointer bg-black/20">
-                                {imageFile ? (
-                                    <div className="text-center">
-                                        <p className="text-green-400 font-medium">{imageFile.name}</p>
-                                        <p className="text-xs text-gray-500">Click to change</p>
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center text-gray-400">
-                                        <Upload size={24} />
-                                        <span>Click to upload</span>
-                                    </div>
-                                )}
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={e => setImageFile(e.target.files?.[0] || null)}
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                />
+                            {/* Upload Mode Selector */}
+                            <div className="flex bg-black/30 border border-white/10 rounded-lg p-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadMode('file')}
+                                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                                        uploadMode === 'file'
+                                            ? 'bg-orange-500 text-white shadow'
+                                            : 'text-gray-400 hover:text-white'
+                                    }`}
+                                >
+                                    Local File Upload
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setUploadMode('drive')}
+                                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all cursor-pointer ${
+                                        uploadMode === 'drive'
+                                            ? 'bg-orange-500 text-white shadow'
+                                            : 'text-gray-400 hover:text-white'
+                                    }`}
+                                >
+                                    Google Drive Link
+                                </button>
                             </div>
+
+                            {uploadMode === 'file' ? (
+                                <div className="border-2 border-dashed border-white/10 rounded-lg h-40 flex items-center justify-center relative hover:border-orange-500/50 transition-colors cursor-pointer bg-black/20">
+                                    {imageFile ? (
+                                        <div className="text-center">
+                                            <p className="text-green-400 font-medium">{imageFile.name}</p>
+                                            <p className="text-xs text-gray-500">Click to change</p>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center text-gray-400">
+                                            <Upload size={24} />
+                                            <span>Click to upload</span>
+                                        </div>
+                                    )}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={e => setImageFile(e.target.files?.[0] || null)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="bg-black/20 border border-white/10 rounded-lg p-4 flex flex-col justify-center gap-2">
+                                    <label className="text-xs font-medium text-gray-400">Google Drive Image URL</label>
+                                    <input
+                                        type="url"
+                                        value={googleDriveUrl}
+                                        onChange={e => setGoogleDriveUrl(e.target.value)}
+                                        placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-orange-500 transition-colors text-sm"
+                                    />
+                                    <span className="text-[10px] text-gray-500">
+                                        Paste any sharing link from Google Drive. Ensure the sharing settings are set to "Anyone with the link".
+                                    </span>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
