@@ -16,90 +16,66 @@ This application demonstrates professional engineering practices in building int
 
 ---
 
-## 📂 Comprehensive Walkthrough: Admin Panel & Features
+## 📂 Folder Structure
 
-The platform includes a secured, authentication-guarded Admin Panel consisting of three core interfaces: the **Books Library**, the **Book Manager / Outline Tracker**, and the **Book Writer Studio**.
+The project has a decoupled structure separating the client-side SPA (built with React, TypeScript, and Vite) from the serverless API backend (built with Express and Node.js on Firebase Cloud Functions).
 
-```mermaid
-graph TD
-    A[Admin Dashboard / Library] -->|Manage Book| B[Book Manager & Outline Workspace]
-    A -->|Open Editor| C[Distraction-Free Writer Studio]
-    
-    subgraph BookDetail.tsx [Book Manager Workspace]
-        B --> B1[Dashboard Stat Aggregator]
-        B --> B2[Outline & Plot Scheduler]
-        B --> B3[Chapter Drag & Drop Reordering]
-        B --> B4[Soft-Delete Recycle Bin]
-        B --> B5[Book & Chapter Visibility Toggles]
-    end
-    
-    subgraph BookWriter.tsx [Creative Writer Studio]
-        C --> C1[Distraction-Free Canvas]
-        C --> C2[Formatting & Layout Toolbars]
-        C --> C3[Zen, Focus, & Typewriter Modes]
-        C --> C4[Productivity Pomodoro & Word Goals]
-        C --> C5[Flesch-Kincaid Readability Analyzer]
-        C --> C6[Manuscript Exporters: Markdown / PDF]
-    end
+### 🖥️ Frontend Structure (`/src`)
+The client application is organized into modular page views, components, custom hooks, and route configurations:
+
+```
+src/
+├── assets/             # Photography media, logos, and static graphics
+├── components/         # Global shared React UI components
+│   ├── admin/          # Management modules for portfolio databases
+│   │   ├── AdminBlogs.tsx      # Admin console to publish and edit blog posts
+│   │   ├── AdminContacts.tsx   # Dashboard panel to view user contact form submissions
+│   │   ├── AdminPhotos.tsx     # Admin panel to manage photography gallery uploads
+│   │   └── AdminProjects.tsx   # Catalog management dashboard for software projects
+│   ├── ConfirmModal.tsx        # Standard reusable action confirmation dialog
+│   ├── ContactSection.tsx      # Animated, interactive user contact form with validation
+│   ├── FloatingAddButton.tsx   # Action trigger button for creating items
+│   ├── Footer.tsx              # Application footer containing social media routes
+│   ├── Navbar.tsx              # Glassmorphic responsive top navigation bar
+│   └── ScrollToTop.tsx         # Utility that resets window scroll position on navigation
+├── context/            # AuthContext providers managing Firebase Auth sessions
+├── hooks/              # Custom React hooks (click-outside listeners, debounced inputs)
+├── pages/              # Main route component views
+│   ├── AdminDashboard.tsx      # Master dashboard panel containing system action logs
+│   ├── BlogPost.tsx            # Full-page article reader with configuration sliders
+│   ├── Blogs.tsx               # Grid of published blog articles with category filters
+│   ├── BookDetail.tsx          # ADMIN: Novel workflow stats, outline tracker, and sortable chapters
+│   ├── BookWriter.tsx          # ADMIN: Distraction-free typography writer, rulers, and Pomodoro timer
+│   ├── BooksLibrary.tsx        # ADMIN: Books dashboard aggregating word counts and states
+│   ├── Contact.tsx             # Dedicated contact form page
+│   ├── Home.tsx                # Portfolio homepage showcasing animations, summary, and skills
+│   ├── Login.tsx               # Security authentication gateway for admin workspace
+│   ├── Photos.tsx              # High-performance responsive photography grid gallery
+│   ├── Projects.tsx            # Grid of software engineering project cards
+│   ├── PublicBookDetail.tsx    # Secure reading page with selection, copy, and print blocks
+│   └── PublicBooks.tsx         # Digital bookshelf and catalogue for public visitors
+├── App.tsx             # Core router defining path routes and auth wrappers
+├── index.css           # Global CSS variables, custom styling layers, and animations
+└── main.tsx            # Application bundle entry point and React root mounting
 ```
 
----
+### ⚙️ Backend Structure (`/functions`)
+The REST API backend runs on serverless Firebase Cloud Functions:
 
-### 🗂️ 1. Books Library Dashboard (`BooksLibrary.tsx`)
-The entryway to the author's backend workspace.
-*   **Novel Registration & Metadata Management**: Create, edit, and archive novels. Includes custom classification forms for title, genre, target audience description, and status.
-*   **Recycle Bin & Recovery**: Houses soft-deleted books and chapters, preventing accidental data loss by giving authors a one-click restore function or permanent purge capabilities.
-
----
-
-### 📊 2. Book Manager & Outline Workspace (`BookDetail.tsx`)
-Located at [BookDetail.tsx](src/pages/BookDetail.tsx), this workspace manages structural book details and overall project timelines:
-
-*   **Dashboard Stat Aggregations**:
-    *   **Word Count Aggregator**: Automatically computes and sums up individual chapter word counts in real time.
-    *   **Reading Time Estimator**: Formulates average consumption speed metrics based on overall word count density (e.g. 250 words/min).
-    *   **Workflow Distribution Stats**: Displays the number of chapters currently in *Draft*, *In Progress*, *Done*, *Needs Revision*, or *Published* statuses.
-*   **Interactive Chapter Reordering**:
-    *   Features a responsive drag-and-drop hierarchy panel powered by `@dnd-kit/core` and `@dnd-kit/sortable`.
-    *   Provides standard handle grip actions supporting pointer and keyboard coordinates for accessible chapter ordering.
-    *   Triggers background API requests to `/chapters/reorder` to immediately update chapter sorting arrays in Firebase.
-*   **Side-by-Side Outline & Plot Planner**:
-    *   Integrates a hierarchical outline organizer to map out narrative arcs, key sequences, and character introduction milestones.
-    *   Each outline note is accompanied by checkbox completion states.
-    *   Maintains double-layer synchronicity: outline data falls back to `localStorage` and automatically updates Firebase using a debounced 1.5-second save trigger.
-*   **Visibility & Publishing Controls**:
-    *   Enables authors to toggle the visibility of the entire book or individual chapters between `Draft` and `Published`.
-    *   Updating a chapter's status to `Published` automatically propagates it to the public library reading feed.
-
----
-
-### ✍️ 3. Distraction-Free Creative Writer Studio (`BookWriter.tsx`)
-Located at [BookWriter.tsx](src/pages/BookWriter.tsx), this interface is a comprehensive manuscript-grade drafting studio:
-
-*   **Manuscript Paper Canvas & Ruler Guides**:
-    *   Simulates realistic manuscript sheets in the editor canvas, aligning text flow to target dimensions.
-    *   **Paper Sizes**: Selectable boundaries for **A4**, **Letter**, and **Legal** page formats.
-    *   **Layout Density Adjuster**: Switches between **Compact**, **Comfortable**, and **Spacious** margin padding profiles.
-    *   **Multi-Unit Scale Rulers**: Implements dynamic Horizontal, Vertical, and Right ruler scales matching the canvas zoom percentage (50% to 200%).
-    *   **Page-Break Calculator**: Contains an automated observer script that measures DOM element bounds, injects page-break spacings, and generates custom headers and page-numbered footers.
-*   **Advanced Typography Formatting (Tiptap)**:
-    *   Supports standard fonts: Times New Roman, Georgia, Palatino, Arial, Calibri, Helvetica, Courier New, and Consolas.
-    *   Includes line spacing guides (Single, 1.5, Double, 2.5), subscript/superscript toggles, drop caps, lists, blockquotes, and dividers.
-    *   **Color Swatch Popovers**: Quick swatches for both foreground text and highlight backgrounds.
-    *   **Table Construction Grid**: An interactive grid picker allowing authors to define table rows and columns dynamically.
-*   **Productivity & Focused Writing Modes**:
-    *   **Zen Mode**: Collapses all toolbars and navigation panels for a zero-distraction drafting screen.
-    *   **Focus Mode**: Highlights the paragraph currently being edited while dimming all surrounding text block containers.
-    *   **Typewriter Scroll Mode**: Pins the active cursor position vertically to the center of the viewport, scrolling the manuscript page automatically as you type.
-*   **Live Metrics & Readability Analysis**:
-    *   Calculates real-time word count, character density, and total sentence count.
-    *   **Flesch-Kincaid Reading Level Engine**: An integrated syllable and text analyzer that scores readability as you type, classifying text into grades (e.g. *5th Grade*, *8-9th Grade*, *College*, *Graduate*).
-*   **Autosave & Backup Exporter**:
-    *   Synchronizes draft content with Cloud Firestore in the background using a debounced autosave system.
-    *   **Offline Document Exporters**: Allows downloading files locally as raw `.txt`, styled `.md` (Markdown), or generating publication-ready PDFs.
-*   **Task & Productivity Aggregators**:
-    *   **Pomodoro Clock**: An interactive session timer (Play, Pause, Reset, Custom Minutes) to help authors focus. Displays warnings and completion toast alerts.
-    *   **Target Word Goals**: Set target word limits per chapter with a visual progress bar indicating completion percentage.
+```
+functions/
+├── middleware/         # Security validation filters
+│   └── auth.js         # JWT validation checking headers, query params, or cookies (checkAdminAuth)
+├── routes/             # API routing sub-controllers
+│   ├── blogs.js        # Blog writing, modifying, and retrieval handlers
+│   ├── books.js        # Novel management, sorting, and authenticated manuscript exports
+│   ├── contacts.js     # Form posting to Cloud Firestore with notifications
+│   ├── photos.js       # Gallery asset indexation and indexing handlers
+│   ├── projects.js     # Project entries REST handlers
+│   └── songs.js        # Spotify/music integration handlers
+├── index.js            # Main Express application bootstrap and export functions wrapper
+└── package.json        # Node.js backend configuration and dependency manifest
+```
 
 ---
 
