@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -15,21 +15,21 @@ import ScrollToTop from "./components/ScrollToTop";
 import FloatingAddButton from "./components/FloatingAddButton";
 import { useAuth } from "./context/AuthContext";
 
-// Pages - Placeholders for now
+// Pages - Lazy loaded for code splitting
 import Home from "./pages/Home";
-import Projects from "./pages/Projects";
-import Blogs from "./pages/Blogs";
-import BlogPost from "./pages/BlogPost";
-import Photos from "./pages/Photos";
-import Contact from "./pages/Contact";
-import Login from "./pages/Login";
-import AdminDashboard from "./pages/AdminDashboard";
-import BookWriter from "./pages/BookWriter";
-import BooksLibrary from "./pages/BooksLibrary";
+const Projects = lazy(() => import("./pages/Projects"));
+const Blogs = lazy(() => import("./pages/Blogs"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const Photos = lazy(() => import("./pages/Photos"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Login = lazy(() => import("./pages/Login"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const BookWriter = lazy(() => import("./pages/BookWriter"));
+const BooksLibrary = lazy(() => import("./pages/BooksLibrary"));
 
-import BookDetail from "./pages/BookDetail";
-import PublicBooks from "./pages/PublicBooks";
-import PublicBookDetail from "./pages/PublicBookDetail";
+const BookDetail = lazy(() => import("./pages/BookDetail"));
+const PublicBooks = lazy(() => import("./pages/PublicBooks"));
+const PublicBookDetail = lazy(() => import("./pages/PublicBookDetail"));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -91,52 +91,63 @@ const App = () => {
               <main
                 className={`flex-1 flex flex-col ${location.pathname === "/" ? "pt-0" : location.pathname === "/admin/books" || location.pathname.startsWith("/admin/books/") || location.pathname === "/admin/book-writer" || location.pathname.startsWith("/books/") ? "pt-16" : "pt-20"}`}
               >
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/projects" element={<Projects />} />
-                  <Route path="/blogs" element={<Blogs />} />
-                  <Route path="/blogs/:id" element={<BlogPost />} />
-                  <Route path="/photos" element={<Photos />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/books" element={<PublicBooks />} />
-                  <Route path="/books/:bookId" element={<PublicBookDetail />} />
+                <Suspense
+                  fallback={
+                    <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="animate-spin text-orange-500 w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full" />
+                        <p className="text-gray-500 text-sm">Loading page...</p>
+                      </div>
+                    </div>
+                  }
+                >
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/projects" element={<Projects />} />
+                    <Route path="/blogs" element={<Blogs />} />
+                    <Route path="/blogs/:id" element={<BlogPost />} />
+                    <Route path="/photos" element={<Photos />} />
+                    <Route path="/contact" element={<Contact />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/books" element={<PublicBooks />} />
+                    <Route path="/books/:bookId" element={<PublicBookDetail />} />
 
-                  <Route
-                    path="/admin"
-                    element={
-                      <ProtectedRoute>
-                        <AdminDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
+                    <Route
+                      path="/admin"
+                      element={
+                        <ProtectedRoute>
+                          <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                  <Route
-                    path="/admin/books"
-                    element={
-                      <ProtectedRoute>
-                        <BooksLibrary />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/books/:bookId"
-                    element={
-                      <ProtectedRoute>
-                        <BookDetail />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/book-writer"
-                    element={
-                      <ProtectedRoute>
-                        <BookWriter />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route path="*" element={<NotFoundRedirect />} />
-                </Routes>
+                    <Route
+                      path="/admin/books"
+                      element={
+                        <ProtectedRoute>
+                          <BooksLibrary />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/books/:bookId"
+                      element={
+                        <ProtectedRoute>
+                          <BookDetail />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/book-writer"
+                      element={
+                        <ProtectedRoute>
+                          <BookWriter />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="*" element={<NotFoundRedirect />} />
+                  </Routes>
+                </Suspense>
               </main>
               <ScrollToTop />
               <FloatingAddButton />
