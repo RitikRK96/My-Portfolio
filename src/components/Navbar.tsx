@@ -24,12 +24,13 @@ const Navbar = () => {
         { name: 'Home', path: '/' },
         { name: 'Projects', path: '/projects' },
         { name: 'Blogs', path: '/blogs' },
+        { name: 'Books', path: '/books' },
         { name: 'Photos', path: '/photos' },
         { name: 'Contact', path: '/contact' },
     ];
 
     const adminLinks = [
-        { name: 'Books', path: '/admin/books' },
+        { name: 'Writer', path: '/admin/books' },
         { name: 'Dashboard', path: '/admin' },
     ];
 

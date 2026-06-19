@@ -24,6 +24,8 @@ import {
   CheckSquare,
   Square,
   X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { auth } from "../firebase";
 import toast from "react-hot-toast";
@@ -57,7 +59,7 @@ interface Chapter {
   content: string;
   order: number;
   isDeleted?: boolean;
-  status?: "draft" | "in-progress" | "done" | "needs-revision";
+  status?: "draft" | "in-progress" | "done" | "needs-revision" | "published";
   synopsis?: string;
   color?: string;
 }
@@ -131,6 +133,11 @@ const CH_STATUS: Record<string, { label: string; color: string; Icon: any }> = {
     color: "text-amber-400",
     Icon: AlertCircle,
   },
+  published: {
+    label: "Published",
+    color: "text-emerald-400",
+    Icon: CheckCircle,
+  },
 };
 
 const CHAPTER_COLORS = [
@@ -150,11 +157,13 @@ const SortableChapterRow = ({
   i,
   onClick,
   onDelete,
+  onTogglePublish,
 }: {
   ch: Chapter;
   i: number;
   onClick: () => void;
   onDelete: (e: React.MouseEvent, id: string) => void;
+  onTogglePublish: (e: React.MouseEvent, id: string, status?: string) => void;
 }) => {
   const {
     attributes,
@@ -230,6 +239,13 @@ const SortableChapterRow = ({
 
       <div className="flex items-center gap-1 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button
+          onClick={(e) => onTogglePublish(e, ch.id, ch.status)}
+          title={ch.status === "published" ? "Unpublish Chapter" : "Publish Chapter"}
+          className="p-2 rounded-lg text-gray-500 hover:text-green-400 hover:bg-green-500/10 transition-all"
+        >
+          {ch.status === "published" ? <EyeOff size={15} /> : <Eye size={15} />}
+        </button>
+        <button
           onClick={(e) => onDelete(e, ch.id)}
           title="Move to Recycle Bin"
           className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
@@ -293,7 +309,10 @@ const BookDetail = () => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/${bookId}`);
+        const token = await auth.currentUser?.getIdToken();
+        const res = await fetch(`${API_URL}/${bookId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error();
         const data = await res.json();
         if (cancelled) return;
@@ -531,6 +550,59 @@ const BookDetail = () => {
     }
   };
 
+  const handleToggleChapterPublish = async (chapterId: string, currentStatus?: string) => {
+    if (!bookId) return;
+    const newStatus = currentStatus === "published" ? "draft" : "published";
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_URL}/${bookId}/chapters/${chapterId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      
+      // Update local state
+      setBook((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          chapters: prev.chapters.map((c) =>
+            c.id === chapterId ? { ...c, status: newStatus } : c
+          ),
+        };
+      });
+      toast.success(newStatus === "published" ? "Chapter published!" : "Chapter unpublished.");
+    } catch {
+      toast.error("Failed to update chapter status");
+    }
+  };
+
+  const handleToggleBookPublish = async () => {
+    if (!bookId || !book) return;
+    const newStatus = book.status === "published" ? "draft" : "published";
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const res = await fetch(`${API_URL}/${bookId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      setBook({ ...book, status: newStatus });
+      setEditBookForm((prev) => ({ ...prev, status: newStatus }));
+      toast.success(newStatus === "published" ? "Book published!" : "Book unpublished.");
+    } catch {
+      toast.error("Failed to update book status");
+    }
+  };
+
   // ── Book Actions ──────────────────────────────────────────────────────────
   const handleSaveBookDetails = async () => {
     if (!bookId || !book) return;
@@ -579,7 +651,7 @@ const BookDetail = () => {
     0,
   );
   const readTime = Math.max(1, Math.ceil(totalWords / 250));
-  const doneCount = activeChapters.filter((c) => c.status === "done").length;
+  const publishedCount = activeChapters.filter((c) => c.status === "published").length;
   const bs = BOOK_STATUS[book.status] ?? BOOK_STATUS.draft;
 
   return (
@@ -765,14 +837,26 @@ const BookDetail = () => {
                   onClick={() =>
                     navigate(`/admin/book-writer?bookId=${bookId}`)
                   }
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black rounded-xl text-sm font-semibold transition-colors w-full justify-center"
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-400 text-black rounded-xl text-sm font-semibold transition-colors w-full justify-center cursor-pointer"
                 >
                   <PenLine size={15} />
                   Open Writer
                 </button>
                 <button
+                  onClick={handleToggleBookPublish}
+                  className={clsx(
+                    "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-all w-full justify-center cursor-pointer",
+                    book.status === "published"
+                      ? "bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/20"
+                      : "bg-green-500/15 hover:bg-green-500/25 text-green-400 border-green-500/25"
+                  )}
+                >
+                  <BookOpen size={15} />
+                  {book.status === "published" ? "Unpublish Book" : "Publish Book"}
+                </button>
+                <button
                   onClick={() => setIsEditingBook(true)}
-                  className="opacity-0 group-hover:opacity-100 flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all w-full justify-center"
+                  className="opacity-0 group-hover:opacity-100 flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white hover:bg-white/[0.05] border border-transparent hover:border-white/[0.08] transition-all w-full justify-center cursor-pointer"
                 >
                   <Edit3 size={15} />
                   Edit Book Details
@@ -787,7 +871,7 @@ const BookDetail = () => {
           {[
             { icon: FileText, label: "Chapters", value: activeChapters.length },
             { icon: Type, label: "Total Words", value: fmtWords(totalWords) },
-            { icon: CheckCircle, label: "Done", value: doneCount },
+            { icon: CheckCircle, label: "Published", value: publishedCount },
             { icon: TrendingUp, label: "Read Time", value: `${readTime}m` },
           ].map(({ icon: Icon, label, value }) => (
             <div
@@ -953,6 +1037,10 @@ const BookDetail = () => {
                           e.stopPropagation();
                           setChapterToDelete(id);
                         }}
+                        onTogglePublish={(e, id, currentStatus) => {
+                          e.stopPropagation();
+                          handleToggleChapterPublish(id, currentStatus);
+                        }}
                       />
                     ))}
                   </div>
@@ -973,7 +1061,7 @@ const BookDetail = () => {
                     onClick={() => {
                       const newItem = {
                         id: Date.now().toString(),
-                        title: "New outline goal...",
+                        title: "",
                         content: "",
                         completed: false,
                       };

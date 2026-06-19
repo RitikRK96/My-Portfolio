@@ -321,7 +321,10 @@ const BooksLibrary = () => {
     useEffect(() => {
         (async () => {
             try {
-                const res = await fetch(API_URL);
+                const token = await auth.currentUser?.getIdToken();
+                const res = await fetch(API_URL, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
                 if (!res.ok) throw new Error();
                 setBooks(await res.json());
             } catch {

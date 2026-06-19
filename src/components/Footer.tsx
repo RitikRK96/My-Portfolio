@@ -12,8 +12,8 @@ const LINKS = [
 const Footer = () => {
     const location = useLocation();
 
-    // Hide footer in BookWriter for a true fullscreen experience
-    if (location.pathname === '/admin/book-writer') {
+    // Hide footer in BookWriter and PublicBookDetail for a true fullscreen experience
+    if (location.pathname === '/admin/book-writer' || location.pathname.startsWith('/books/')) {
         return null;
     }
 

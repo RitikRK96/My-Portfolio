@@ -235,6 +235,12 @@ const STATUS_CONFIG = {
     bg: "bg-amber-500/15",
     text: "text-amber-400",
   },
+  published: {
+    label: "Published",
+    dot: "#10B981",
+    bg: "bg-emerald-500/15",
+    text: "text-emerald-400",
+  },
 } as const;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -2400,7 +2406,10 @@ const BookWriter = () => {
     // Meta is now loaded from chapters
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/${bookId}`);
+        const token = await auth.currentUser?.getIdToken();
+        const res = await fetch(`${API_URL}/${bookId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error("Not found");
         const data = await res.json();
         if (cancelled) return;
@@ -2874,30 +2883,40 @@ const BookWriter = () => {
   };
 
   /** Open a popup with the backend-rendered chapter HTML, which auto-triggers print → Save as PDF */
-  const onExportChapterPdf = () => {
+  const onExportChapterPdf = async () => {
     if (!activeChapter || !bookId) {
       toast.error("No chapter selected");
       return;
     }
-    const url = `${API_URL}/${bookId}/chapters/${activeChapter.id}/export/html`;
-    const w = window.open(
-      url,
-      "_blank",
-      "width=900,height=700,menubar=yes,toolbar=yes",
-    );
-    if (!w) toast.error("Allow pop-ups to export PDF");
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const url = `${API_URL}/${bookId}/chapters/${activeChapter.id}/export/html?token=${token}`;
+      const w = window.open(
+        url,
+        "_blank",
+        "width=900,height=700,menubar=yes,toolbar=yes",
+      );
+      if (!w) toast.error("Allow pop-ups to export PDF");
+    } catch {
+      toast.error("Failed to authenticate for export");
+    }
   };
 
   /** Open a popup with the backend-rendered full book HTML (all chapters), triggers print → Save as PDF */
-  const onExportBookPdf = () => {
+  const onExportBookPdf = async () => {
     if (!bookId) return;
-    const url = `${API_URL}/${bookId}/export/html`;
-    const w = window.open(
-      url,
-      "_blank",
-      "width=900,height=700,menubar=yes,toolbar=yes",
-    );
-    if (!w) toast.error("Allow pop-ups to export PDF");
+    try {
+      const token = await auth.currentUser?.getIdToken();
+      const url = `${API_URL}/${bookId}/export/html?token=${token}`;
+      const w = window.open(
+        url,
+        "_blank",
+        "width=900,height=700,menubar=yes,toolbar=yes",
+      );
+      if (!w) toast.error("Allow pop-ups to export PDF");
+    } catch {
+      toast.error("Failed to authenticate for export");
+    }
   };
 
   // ── Stats ─────────────────────────────────────────────────────────────────

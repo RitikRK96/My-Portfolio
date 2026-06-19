@@ -4,6 +4,28 @@ const admin = require('firebase-admin');
 const db = admin.firestore();
 const validateFirebaseIdToken = require('../middleware/auth');
 
+// Helper to check admin authorization via token from header, query, or cookie
+const checkAdminAuth = async (req) => {
+    let idToken = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        idToken = req.headers.authorization.split('Bearer ')[1];
+    } else if (req.query.token) {
+        idToken = req.query.token;
+    } else if (req.cookies && req.cookies.__session) {
+        idToken = req.cookies.__session;
+    }
+
+    if (!idToken) return false;
+
+    try {
+        const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+        return !!decodedIdToken;
+    } catch (err) {
+        console.error('Error while verifying Firebase ID token in checkAdminAuth:', err);
+        return false;
+    }
+};
+
 // ─── Helper: strip HTML and count words ──────────────────────────────────────
 const countWords = (html = '') => {
     const text = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -40,6 +62,19 @@ router.get('/', async (req, res) => {
     try {
         const includeDeleted = req.query.all === 'true';
 
+        let isAdmin = false;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            const idToken = req.headers.authorization.split('Bearer ')[1];
+            try {
+                const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+                if (decodedIdToken) {
+                    isAdmin = true;
+                }
+            } catch (err) {
+                return res.status(403).json({ error: 'Unauthorized', message: 'Invalid token' });
+            }
+        }
+
         const snapshot = await db
             .collection('books')
             .orderBy('createdAt', 'desc')
@@ -52,7 +87,13 @@ router.get('/', async (req, res) => {
                 createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
                 updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
             }))
-            .filter(b => includeDeleted || !b.isDeleted);
+            .filter(b => {
+                if (isAdmin) {
+                    return includeDeleted || !b.isDeleted;
+                } else {
+                    return !b.isDeleted && b.status === 'published';
+                }
+            });
 
         res.status(200).json(books);
     } catch (error) {
@@ -64,6 +105,11 @@ router.get('/', async (req, res) => {
 // NOTE: Must be defined BEFORE /:id to prevent Express wildcard shadowing.
 router.get('/:bookId/export/html', async (req, res) => {
     try {
+        const isAdmin = await checkAdminAuth(req);
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized', message: 'Admin authentication required' });
+        }
+
         const { bookId } = req.params;
         const bookDoc = await db.collection('books').doc(bookId).get();
         if (!bookDoc.exists) return res.status(404).json({ error: 'Book not found' });
@@ -128,6 +174,11 @@ ${chaptersHtml}
 // NOTE: Must be defined BEFORE /:id to prevent Express wildcard shadowing.
 router.get('/:bookId/chapters/:chapterId/export/html', async (req, res) => {
     try {
+        const isAdmin = await checkAdminAuth(req);
+        if (!isAdmin) {
+            return res.status(403).json({ error: 'Unauthorized', message: 'Admin authentication required' });
+        }
+
         const { bookId, chapterId } = req.params;
         const chapterDoc = await db
             .collection('books').doc(bookId)
@@ -180,23 +231,44 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ error: 'Book not found' });
         }
 
+        const bookData = bookDoc.data();
+
+        let isAdmin = false;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+            const idToken = req.headers.authorization.split('Bearer ')[1];
+            try {
+                const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+                if (decodedIdToken) {
+                    isAdmin = true;
+                }
+            } catch (err) {
+                return res.status(403).json({ error: 'Unauthorized', message: 'Invalid token' });
+            }
+        }
+
+        if (!isAdmin && (bookData.isDeleted || bookData.status !== 'published')) {
+            return res.status(404).json({ error: 'Book not found' });
+        }
+
         const chaptersSnapshot = await bookRef
             .collection('chapters')
             .orderBy('order', 'asc')
             .get();
 
-        const chapters = chaptersSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
-            updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
-        }));
+        const chapters = chaptersSnapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                createdAt: doc.data().createdAt?.toDate?.()?.toISOString() || null,
+                updatedAt: doc.data().updatedAt?.toDate?.()?.toISOString() || null,
+            }))
+            .filter(c => isAdmin || (!c.isDeleted && c.status === 'published'));
 
         res.status(200).json({
             id: bookDoc.id,
-            ...bookDoc.data(),
-            createdAt: bookDoc.data().createdAt?.toDate?.()?.toISOString() || null,
-            updatedAt: bookDoc.data().updatedAt?.toDate?.()?.toISOString() || null,
+            ...bookData,
+            createdAt: bookData.createdAt?.toDate?.()?.toISOString() || null,
+            updatedAt: bookData.updatedAt?.toDate?.()?.toISOString() || null,
             chapters,
         });
     } catch (error) {

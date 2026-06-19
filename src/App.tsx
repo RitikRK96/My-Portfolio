@@ -28,6 +28,8 @@ import BookWriter from "./pages/BookWriter";
 import BooksLibrary from "./pages/BooksLibrary";
 
 import BookDetail from "./pages/BookDetail";
+import PublicBooks from "./pages/PublicBooks";
+import PublicBookDetail from "./pages/PublicBookDetail";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -87,7 +89,7 @@ const App = () => {
               <div className="grid-bg"></div>
               <Navbar />
               <main
-                className={`flex-1 flex flex-col ${location.pathname === "/" ? "pt-0" : location.pathname === "/admin/books" || location.pathname.startsWith("/admin/books/") || location.pathname === "/admin/book-writer" ? "pt-16" : "pt-20"}`}
+                className={`flex-1 flex flex-col ${location.pathname === "/" ? "pt-0" : location.pathname === "/admin/books" || location.pathname.startsWith("/admin/books/") || location.pathname === "/admin/book-writer" || location.pathname.startsWith("/books/") ? "pt-16" : "pt-20"}`}
               >
                 <Routes>
                   <Route path="/" element={<Home />} />
@@ -97,6 +99,8 @@ const App = () => {
                   <Route path="/photos" element={<Photos />} />
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/login" element={<Login />} />
+                  <Route path="/books" element={<PublicBooks />} />
+                  <Route path="/books/:bookId" element={<PublicBookDetail />} />
 
                   <Route
                     path="/admin"
