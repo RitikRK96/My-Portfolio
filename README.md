@@ -79,6 +79,62 @@ functions/
 
 ---
 
+## 🛠️ Core Admin Workspace Features
+
+The Admin Panel includes modular interfaces designed to help writers plan, outline, write, and manage their novels:
+
+### 🗂️ Books Library Dashboard (`BooksLibrary.tsx`)
+The entryway to the author's backend workspace.
+*   **Novel Registration & Metadata Management**: Create, edit, and archive novels. Includes custom classification forms for title, genre, target audience description, and status.
+*   **Recycle Bin & Recovery**: Houses soft-deleted books and chapters, preventing accidental data loss by giving authors a one-click restore function or permanent purge capabilities.
+
+### 📊 Book Manager & Outline Workspace (`BookDetail.tsx`)
+Located at [BookDetail.tsx](src/pages/BookDetail.tsx), this workspace manages structural book details and overall project timelines:
+*   **Dashboard Stat Aggregations**:
+    *   **Word Count Aggregator**: Automatically computes and sums up individual chapter word counts in real time.
+    *   **Reading Time Estimator**: Formulates average consumption speed metrics based on overall word count density (e.g. 250 words/min).
+    *   **Workflow Distribution Stats**: Displays the number of chapters currently in *Draft*, *In Progress*, *Done*, *Needs Revision*, or *Published* statuses.
+*   **Interactive Chapter Reordering**:
+    *   Features a responsive drag-and-drop hierarchy panel powered by `@dnd-kit/core` and `@dnd-kit/sortable`.
+    *   Provides standard handle grip actions supporting pointer and keyboard coordinates for accessible chapter ordering.
+    *   Triggers background API requests to `/chapters/reorder` to immediately update chapter sorting arrays in Firebase.
+*   **Side-by-Side Outline & Plot Planner**:
+    *   Integrates a hierarchical outline organizer to map out narrative arcs, key sequences, and character introduction milestones.
+    *   Each outline note is accompanied by checkbox completion states.
+    *   Maintains double-layer synchronicity: outline data falls back to `localStorage` and automatically updates Firebase using a debounced 1.5-second save trigger.
+*   **Visibility & Publishing Controls**:
+    *   Enables authors to toggle the visibility of the entire book or individual chapters between `Draft` and `Published`.
+    *   Updating a chapter's status to `Published` automatically propagates it to the public library reading feed.
+
+### ✍️ Distraction-Free Creative Writer Studio (`BookWriter.tsx`)
+Located at [BookWriter.tsx](src/pages/BookWriter.tsx), this interface is a comprehensive manuscript-grade drafting studio:
+*   **Manuscript Paper Canvas & Ruler Guides**:
+    *   Simulates realistic manuscript sheets in the editor canvas, aligning text flow to target dimensions.
+    *   **Paper Sizes**: Selectable boundaries for **A4**, **Letter**, and **Legal** page formats.
+    *   **Layout Density Adjuster**: Switches between **Compact**, **Comfortable**, and **Spacious** margin padding profiles.
+    *   **Multi-Unit Scale Rulers**: Implements dynamic Horizontal, Vertical, and Right ruler scales matching the canvas zoom percentage (50% to 200%).
+    *   **Page-Break Calculator**: Contains an automated observer script that measures DOM element bounds, injects page-break spacings, and generates custom headers and page-numbered footers.
+*   **Advanced Typography Formatting (Tiptap)**:
+    *   Supports standard fonts: Times New Roman, Georgia, Palatino, Arial, Calibri, Helvetica, Courier New, and Consolas.
+    *   Includes line spacing guides (Single, 1.5, Double, 2.5), subscript/superscript toggles, drop caps, lists, blockquotes, and dividers.
+    *   **Color Swatch Popovers**: Quick swatches for both foreground text and highlight backgrounds.
+    *   **Table Construction Grid**: An interactive grid picker allowing authors to define table rows and columns dynamically.
+*   **Productivity & Focused Writing Modes**:
+    *   **Zen Mode**: Collapses all toolbars and navigation panels for a zero-distraction drafting screen.
+    *   **Focus Mode**: Highlights the paragraph currently being edited while dimming all surrounding text block containers.
+    *   **Typewriter Scroll Mode**: Pins the active cursor position vertically to the center of the viewport, scrolling the manuscript page automatically as you type.
+*   **Live Metrics & Readability Analysis**:
+    *   Calculates real-time word count, character density, and total sentence count.
+    *   **Flesch-Kincaid Reading Level Engine**: An integrated syllable and text analyzer that scores readability as you type, classifying text into grades (e.g. *5th Grade*, *8-9th Grade*, *College*, *Graduate*).
+*   **Autosave & Backup Exporter**:
+    *   Synchronizes draft content with Cloud Firestore in the background using a debounced autosave system.
+    *   **Offline Document Exporters**: Allows downloading files locally as raw `.txt`, styled `.md` (Markdown), or generating publication-ready PDFs.
+*   **Task & Productivity Aggregators**:
+    *   **Pomodoro Clock**: An interactive session timer (Play, Pause, Reset, Custom Minutes) to help authors focus. Displays warnings and completion toast alerts.
+    *   **Target Word Goals**: Set target word limits per chapter with a visual progress bar indicating completion percentage.
+
+---
+
 ## 🔒 Layered Security & Intellectual Property Protection
 
 To safeguard original novels and digital manuscripts from unauthorized copy-pasting, piracy, and cloning, the platform implements a layered security model combining **aggressive client-side anti-theft blocks** with **token-authenticated backend microservices**.
@@ -176,7 +232,7 @@ To showcase professional debugging, layout tuning, and security engineering, the
 ### Prerequisite Environment Variables
 Create a `.env` file at the project root to target your backend API base:
 ```env
-VITE_API_URL=https://api-dp2f6yjbbq-el.a.run.app
+VITE_API_URL=https://your-backend-api-cloud-function.run.app
 ```
 
 ### Installation
