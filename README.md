@@ -1,29 +1,25 @@
-# 💼 Professional Developer Portfolio, Life Tracker & Creative Writer's Studio
+# 💼 Professional Developer Portfolio & Creative Writer's Studio
 
-Welcome to my professional developer portfolio, daily life tracker, and digital playground! This project is a curated showcase of advanced frontend engineering, custom editor architecture, private habit & life tracking metrics, secure serverless APIs, and creative writing utility suites. 
+Welcome to my professional developer portfolio and digital playground! This project is a curated showcase of advanced frontend engineering, custom editor architecture, secure serverless APIs, and creative writing utility suites. 
 
-It functions as:
-1. **Interactive Developer Portfolio**: Demonstrating full-stack engineering skills, modern responsive layouts, animation workflows, and custom backend APIs.
-2. **🚀 Standalone Daily Life & Dev Tracker (PWA)**: A private, mobile-installable habit, dev progress, dual-sleep, screen-time, and step-tracking dashboard synchronized to Cloud Firestore in real time.
-3. **✍️ Writer's Studio & Digital Library**: A production-grade manuscript drafting studio, novel outline manager, and anti-theft protected public book reader designed for novelists and content creators.
+It functions as both an interactive portfolio demonstrating my software development skills (featuring modern responsive layouts, animation workflows, standalone Daily Life & Dev Tracker, PWA mobile capabilities, and custom backend APIs) and a robust, production-grade **Writer's Studio and Digital Library** designed for novelists and content creators.
 
 ---
 
-## 🎨 Core Architecture & Showcase Highlights
+## 🎨 Creative Architecture & Portfolio Showcase
 
-This application demonstrates modern full-stack engineering practices:
-1. **📱 Progressive Web App (PWA) & Mobile Installation**: Built with `vite-plugin-pwa`, enabling one-click mobile installation as a standalone app / APK with service worker caching and offline resilience.
-2. **📊 Real-time Life & Dev Tracking**: Real-time Firestore synchronization for daily coding logs, multi-session sleep schedules (night + evening naps), granular app screen time (Instagram, WhatsApp, BGMI, Snapchat), step counts, and dynamic custom habits checklists.
-3. **Custom Editor Architectures**: A fully custom Tiptap engine integrating complex paragraph-dimming focus states, page-break computation algorithms, and multi-unit canvas rulers.
-4. **State & Sync Synchronization**: Real-time database synchronizations, autosaving debounces, local storage fallback systems, and dynamic state machines.
-5. **Advanced Layout Engineering**: Immersive CSS styling including glassmorphism, responsive sidebars, smooth animations (Framer Motion + AOS), and dark/light/sepia contrast-aware themes.
-6. **Serverless REST APIs**: Secured microservices deployed via Firebase Cloud Functions utilizing Express routing and custom claims middleware.
+This application demonstrates professional engineering practices in building interactive web ecosystems:
+1. **Custom Editor Architectures**: A fully custom Tiptap engine integrating complex paragraph-dimming focus states, page-break computation algorithms, and multi-unit canvas rulers.
+2. **State & Sync Synchronization**: Real-time database synchronizations, autosaving debounces, local storage fallback systems, and dynamic state machines.
+3. **Advanced Layout Engineering**: Immersive CSS styling including glassmorphism, responsive sidebars, smooth animations (Framer Motion + AOS), and dark/light/sepia contrast-aware themes.
+4. **Serverless REST APIs**: Secured microservices deployed via Firebase Cloud Functions utilizing Express routing and custom claims middleware.
+5. **Progressive Web App (PWA) & Mobile Installation**: Built with `vite-plugin-pwa` for native home-screen installation, background service worker caching, and offline resilience.
 
 ---
 
 ## 📂 Folder Structure
 
-The project features a decoupled structure separating the client-side SPA & PWA (built with React, TypeScript, and Vite) from the serverless API backend (built with Express and Node.js on Firebase Cloud Functions).
+The project has a decoupled structure separating the client-side SPA & PWA (built with React, TypeScript, and Vite) from the serverless API backend (built with Express and Node.js on Firebase Cloud Functions).
 
 ### 🖥️ Frontend Structure (`/src`)
 The client application is organized into modular page views, components, custom hooks, and route configurations:
@@ -34,7 +30,7 @@ src/
 ├── components/         # Global shared React UI components
 │   ├── admin/          # Management modules for portfolio databases & tracking
 │   │   ├── AdminBlogs.tsx          # Admin console to publish and edit blog posts
-│   │   ├── AdminContacts.tsx       # Dashboard panel to view user contact submissions
+│   │   ├── AdminContacts.tsx       # Dashboard panel to view user contact form submissions
 │   │   ├── AdminDailyTracker.tsx   # Comprehensive daily life, dev, sleep & habit tracker
 │   │   ├── AdminPhotos.tsx         # Admin panel to manage photography gallery uploads
 │   │   └── AdminProjects.tsx       # Catalog management dashboard for software projects
@@ -50,7 +46,7 @@ src/
 │   └── ProjectContext.tsx      # Projects, blogs, photos, and contact message state
 ├── hooks/              # Custom React hooks (click-outside listeners, debounced inputs)
 ├── pages/              # Main route component views
-│   ├── AdminDashboard.tsx      # Master CMS dashboard panel for projects, blogs, photos & messages
+│   ├── AdminDashboard.tsx      # Master dashboard panel containing system action logs
 │   ├── BlogPost.tsx            # Full-page article reader with configuration sliders
 │   ├── Blogs.tsx               # Grid of published blog articles with category filters
 │   ├── BookDetail.tsx          # ADMIN: Novel workflow stats, outline tracker, and sortable chapters
@@ -89,46 +85,38 @@ functions/
 
 ---
 
-## 🚀 Standalone Daily Life & Dev Tracker (`/tracker`)
+## 🛠️ Core Admin Workspace Features
 
-A private dashboard accessible only to authenticated users via `<ProtectedRoute>`, designed for daily productivity and habit accountability:
+The Admin Panel includes modular interfaces designed to help writers plan, outline, write, and manage their novels, as well as track daily developer progress and lifestyle metrics:
 
-### 1. 🔥 Interactive 365-Day Activity Heatmap
-* **GitHub-Style Contribution Grid**: Renders the past 365 days of activity with 5 intensity levels based on hours coded and tasks finished.
-* **Interactive Tooltips & Date Jumper**: Click any square to jump directly into that day's log with instant stats preview.
-
-### 2. 💻 Coding & Dev Progress
-* **Hours Coded**: Daily coding duration tracker with weekly average insights.
-* **Task Checklist**: Interactive checklist with strike-through completions and deletion.
-* **Learning Categories & Tags**: Quick tags for `#mern-stack`, `#genai`, `#dsa`, `#react`, `#nodejs`, `#express`, `#mongodb`, `#typescript`, `#system-design`, and custom tags.
-* **Reflections & Solutions**: Dedicated logs for key learnings and daily roadblocks/bugfixes.
-
-### 3. 📱 Phone Screen Time & App Breakdown
-* **Total Screen Time**: Logs hours and minutes with real-time digital wellness rating (*Optimal*, *Moderate*, *High*).
-* **App-Specific Tracker**: Dedicated tracking inputs for **📸 Instagram**, **💬 WhatsApp**, **🎮 BGMI**, and **👻 Snapchat** in minutes with automatic sum calculations.
-
-### 4. 🌙 Dual-Session Sleep Tracking (Night + Evening Nap)
-* **Primary Night Sleep**: Bedtime and Wake-up time inputs with auto duration computation.
-* **Evening / Afternoon Nap (2nd Sleep)**: Toggleable nap session inputs with auto-calculated duration.
-* **Total Daily Sleep**: Automatically aggregates night sleep and nap duration.
-* **Energy & Rest Rating**: Visual mood/rest level selectors (*⚡ Energized*, *😊 Good*, *😐 Moderate*, *🥱 Tired*, *💀 Exhausted*).
-
-### 5. 👟 Step Count & Activity
-* **Daily Steps Log**: Track walked steps with a custom daily target (default 10,000 steps).
-* **Progress Bar & Milestones**: Live animated progress bar with milestone statuses (*🚶‍♂️ Getting active*, *👟 Great Pace*, *🏆 Goal Reached*).
-
-### 6. ⚡ Habits & Custom Checklist
-* **Preset Consistency Checklist**: Quick toggles for *DSA / LeetCode*, *MERN Full-Stack*, *GenAI & LLMs*, *Workout / Gym*, *3L+ Water*, *Reading*, and *Clean Diet*.
-* **Interactive Custom Habit Items**: Create custom daily tasks on the fly with clickable completion states.
-* **Custom Key-Value Metrics**: Track arbitrary personal stats like Weight (*72kg*), Calories (*2100 kcal*), etc.
-
-### 7. 📱 Mobile PWA Installation
-* Configured with `vite-plugin-pwa` and `manifest.webmanifest`.
-* Can be installed directly onto Android, iOS, or Desktop as a native standalone application.
-
----
-
-## 🛠️ Writer's Studio & Digital Library
+### 🚀 Daily Life & Dev Tracker (`AdminDailyTracker.tsx` / `DailyTracker.tsx`)
+Located at [`/tracker`](src/pages/DailyTracker.tsx), this is a standalone, private tracking dashboard protected by `<ProtectedRoute>` for daily accountability, software engineering consistency, and digital wellness:
+*   **🔥 Interactive 365-Day Activity Heatmap Engine**:
+    *   Renders a full 365-day GitHub-style contribution grid with 5 dynamic intensity levels formulated from daily hours coded and completed tasks.
+    *   Supports responsive horizontal scrolling (`touch-pan-x`) and interactive tooltips with click-to-jump date loading.
+*   **💻 Dev Progress, Consistency Tags & Problem Solving**:
+    *   **Coding Hours & Benchmarking**: Logs daily coding duration with rolling weekly average insights and streak counters.
+    *   **Interactive Task Checklist**: Add, toggle (with strike-through animations), and delete daily development objectives.
+    *   **Learning & Tech Tags**: Categorize work with preset tags (`#mern-stack`, `#genai`, `#dsa`, `#react`, `#nodejs`, `#express`, `#mongodb`, `#typescript`, `#system-design`, `#llms`, `#bugfix`, `#portfolio`) or create custom tags.
+    *   **Reflections & Engineering Logs**: Dedicated text areas for documenting daily key learnings, architectural decisions, and specific roadblocks/bugfixes.
+*   **📱 Phone Screen Time & Granular App Breakdown**:
+    *   **Total Screen Time & Health Rating**: Logs total daily phone screen time with real-time wellness evaluation (*Optimal <3h*, *Moderate 3-5h*, *High >5h*).
+    *   **App-Specific Breakdown (Minutes)**: Dedicated tracking cards for **📸 Instagram**, **💬 WhatsApp**, **🎮 BGMI**, and **👻 Snapchat** with automatic sum calculations that update total daily hours and minutes.
+*   **🌙 Dual-Session Sleep & Energy Recovery**:
+    *   **Primary Night Sleep**: Logs bedtime and wake-up time with automatic night sleep duration calculation.
+    *   **Evening / Afternoon Nap (2nd Sleep)**: Toggleable nap module with start/end time inputs and independent duration calculation.
+    *   **Total Sleep Aggregator**: Automatically sums night sleep and nap times for complete daily sleep metrics.
+    *   **Energy & Mood Rating**: Interactive 5-star rating system tracking daily energy levels and focus.
+*   **👟 Step Count & Activity Tracker**:
+    *   **Step Logger & Customizable Target**: Set custom daily step goals (default 10,000 steps) and track actual daily steps walked.
+    *   **Live Milestone Progress Bar**: Animated gradient bar displaying percentage completion with live milestones (*🚶‍♂️ Getting active*, *👟 Great Pace!*, *🏆 Daily Goal Reached!*).
+*   **⚡ Consistency Checklist & Custom Habits Tracker**:
+    *   **Preset Consistency Grid**: Quick visual toggles for core daily habits (*DSA / LeetCode*, *MERN Full-Stack*, *GenAI & LLMs*, *Workout / Gym*, *3L+ Water*, *Reading*, and *Clean Diet*).
+    *   **Interactive Custom Habits Checklist**: Create custom daily tasks or challenges on the fly with clickable completion checkmarks and instant deletion.
+    *   **Custom Key-Value Metrics**: Log arbitrary personal data points (e.g. Weight: *72kg*, Calories: *2100 kcal*, Gym PRs: *100kg Bench*).
+*   **🔒 Private Cloud Firestore Synchronization**:
+    *   Real-time bi-directional sync with Cloud Firestore collection `daily_logs`.
+    *   Strictly protected by Firestore security rules ensuring personal logs are only readable and writable by the authenticated admin.
 
 ### 🗂️ Books Library Dashboard (`BooksLibrary.tsx`)
 The entryway to the author's backend workspace.
@@ -268,12 +256,12 @@ To showcase professional debugging, layout tuning, and security engineering, the
 
 ---
 
-## 🛠️ Technology Stack & Dependencies
+## 🛠️ Technology Stack & APIs
 
 *   **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons, AOS (Animate on Scroll), `vite-plugin-pwa`.
 *   **Rich Text Engine**: Tiptap (`@tiptap/react`, `@tiptap/starter-kit`, custom ruler extensions).
 *   **Database & Storage**: Google Cloud Firestore & Firebase Cloud Storage.
-*   **Backend Microservices**: Node.js & Express hosted on serverless Firebase Cloud Functions (`asia-south1`).
+*   **Backend Functions**: Express routing hosted on Node.js Firebase Functions (`asia-south1`).
 *   **Authentication**: Firebase Auth with JWT Claims Verification.
 
 ---
@@ -287,7 +275,7 @@ VITE_API_URL=https://your-backend-api-cloud-function.run.app
 ```
 
 ### Installation
-1. Install client dependencies:
+1. Install project dependencies:
    ```bash
    npm install
    ```
@@ -306,12 +294,11 @@ npm run dev
 
 ### Deployment
 To push updates to production:
-*   **Backend Microservices & Rules**:
+*   **Backend APIs & Rules**:
     ```bash
     firebase deploy --only functions,firestore,storage
     ```
-*   **Frontend Website & PWA**:
+*   **Frontend SPA & PWA**:
     ```bash
-    npm run build
-    firebase deploy --only hosting
+    npm run build && firebase deploy --only hosting
     ```
