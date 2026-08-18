@@ -1,24 +1,29 @@
-# 💼 Professional Developer Portfolio & Creative Writer's Studio
+# 💼 Professional Developer Portfolio, Life Tracker & Creative Writer's Studio
 
-Welcome to my professional developer portfolio and digital playground! This project is a curated showcase of advanced frontend engineering, custom editor architecture, secure serverless APIs, and creative writing utility suites. 
+Welcome to my professional developer portfolio, daily life tracker, and digital playground! This project is a curated showcase of advanced frontend engineering, custom editor architecture, private habit & life tracking metrics, secure serverless APIs, and creative writing utility suites. 
 
-It functions as both an interactive portfolio demonstrating my software development skills (featuring modern responsive layouts, animation workflows, and custom backend APIs) and a robust, production-grade **Writer's Studio and Digital Library** designed for novelists and content creators.
+It functions as:
+1. **Interactive Developer Portfolio**: Demonstrating full-stack engineering skills, modern responsive layouts, animation workflows, and custom backend APIs.
+2. **🚀 Standalone Daily Life & Dev Tracker (PWA)**: A private, mobile-installable habit, dev progress, dual-sleep, screen-time, and step-tracking dashboard synchronized to Cloud Firestore in real time.
+3. **✍️ Writer's Studio & Digital Library**: A production-grade manuscript drafting studio, novel outline manager, and anti-theft protected public book reader designed for novelists and content creators.
 
 ---
 
-## 🎨 Creative Architecture & Portfolio Showcase
+## 🎨 Core Architecture & Showcase Highlights
 
-This application demonstrates professional engineering practices in building interactive web ecosystems:
-1. **Custom Editor Architectures**: A fully custom Tiptap engine integrating complex paragraph-dimming focus states, page-break computation algorithms, and multi-unit canvas rulers.
-2. **State & Sync Synchronization**: Real-time database synchronizations, autosaving debounces, local storage fallback systems, and dynamic state machines.
-3. **Advanced Layout Engineering**: Immersive CSS styling including glassmorphism, responsive sidebars, smooth animations (Framer Motion + AOS), and dark/light/sepia contrast-aware themes.
-4. **Serverless REST APIs**: Secured microservices deployed via Firebase Cloud Functions utilizing Express routing and custom claims middleware.
+This application demonstrates modern full-stack engineering practices:
+1. **📱 Progressive Web App (PWA) & Mobile Installation**: Built with `vite-plugin-pwa`, enabling one-click mobile installation as a standalone app / APK with service worker caching and offline resilience.
+2. **📊 Real-time Life & Dev Tracking**: Real-time Firestore synchronization for daily coding logs, multi-session sleep schedules (night + evening naps), granular app screen time (Instagram, WhatsApp, BGMI, Snapchat), step counts, and dynamic custom habits checklists.
+3. **Custom Editor Architectures**: A fully custom Tiptap engine integrating complex paragraph-dimming focus states, page-break computation algorithms, and multi-unit canvas rulers.
+4. **State & Sync Synchronization**: Real-time database synchronizations, autosaving debounces, local storage fallback systems, and dynamic state machines.
+5. **Advanced Layout Engineering**: Immersive CSS styling including glassmorphism, responsive sidebars, smooth animations (Framer Motion + AOS), and dark/light/sepia contrast-aware themes.
+6. **Serverless REST APIs**: Secured microservices deployed via Firebase Cloud Functions utilizing Express routing and custom claims middleware.
 
 ---
 
 ## 📂 Folder Structure
 
-The project has a decoupled structure separating the client-side SPA (built with React, TypeScript, and Vite) from the serverless API backend (built with Express and Node.js on Firebase Cloud Functions).
+The project features a decoupled structure separating the client-side SPA & PWA (built with React, TypeScript, and Vite) from the serverless API backend (built with Express and Node.js on Firebase Cloud Functions).
 
 ### 🖥️ Frontend Structure (`/src`)
 The client application is organized into modular page views, components, custom hooks, and route configurations:
@@ -27,27 +32,32 @@ The client application is organized into modular page views, components, custom 
 src/
 ├── assets/             # Photography media, logos, and static graphics
 ├── components/         # Global shared React UI components
-│   ├── admin/          # Management modules for portfolio databases
-│   │   ├── AdminBlogs.tsx      # Admin console to publish and edit blog posts
-│   │   ├── AdminContacts.tsx   # Dashboard panel to view user contact form submissions
-│   │   ├── AdminPhotos.tsx     # Admin panel to manage photography gallery uploads
-│   │   └── AdminProjects.tsx   # Catalog management dashboard for software projects
+│   ├── admin/          # Management modules for portfolio databases & tracking
+│   │   ├── AdminBlogs.tsx          # Admin console to publish and edit blog posts
+│   │   ├── AdminContacts.tsx       # Dashboard panel to view user contact submissions
+│   │   ├── AdminDailyTracker.tsx   # Comprehensive daily life, dev, sleep & habit tracker
+│   │   ├── AdminPhotos.tsx         # Admin panel to manage photography gallery uploads
+│   │   └── AdminProjects.tsx       # Catalog management dashboard for software projects
 │   ├── ConfirmModal.tsx        # Standard reusable action confirmation dialog
 │   ├── ContactSection.tsx      # Animated, interactive user contact form with validation
 │   ├── FloatingAddButton.tsx   # Action trigger button for creating items
 │   ├── Footer.tsx              # Application footer containing social media routes
-│   ├── Navbar.tsx              # Glassmorphic responsive top navigation bar
+│   ├── Navbar.tsx              # Glassmorphic responsive top navigation bar (with Tracker link)
 │   └── ScrollToTop.tsx         # Utility that resets window scroll position on navigation
-├── context/            # AuthContext providers managing Firebase Auth sessions
+├── context/            # React Context providers for global state management
+│   ├── AuthContext.tsx         # Firebase Authentication session manager
+│   ├── DailyTrackerContext.tsx # Firestore sync, streak calculation, & daily log state engine
+│   └── ProjectContext.tsx      # Projects, blogs, photos, and contact message state
 ├── hooks/              # Custom React hooks (click-outside listeners, debounced inputs)
 ├── pages/              # Main route component views
-│   ├── AdminDashboard.tsx      # Master dashboard panel containing system action logs
+│   ├── AdminDashboard.tsx      # Master CMS dashboard panel for projects, blogs, photos & messages
 │   ├── BlogPost.tsx            # Full-page article reader with configuration sliders
 │   ├── Blogs.tsx               # Grid of published blog articles with category filters
 │   ├── BookDetail.tsx          # ADMIN: Novel workflow stats, outline tracker, and sortable chapters
 │   ├── BookWriter.tsx          # ADMIN: Distraction-free typography writer, rulers, and Pomodoro timer
 │   ├── BooksLibrary.tsx        # ADMIN: Books dashboard aggregating word counts and states
 │   ├── Contact.tsx             # Dedicated contact form page
+│   ├── DailyTracker.tsx        # Standalone protected route (/tracker) for daily tracking
 │   ├── Home.tsx                # Portfolio homepage showcasing animations, summary, and skills
 │   ├── Login.tsx               # Security authentication gateway for admin workspace
 │   ├── Photos.tsx              # High-performance responsive photography grid gallery
@@ -79,9 +89,46 @@ functions/
 
 ---
 
-## 🛠️ Core Admin Workspace Features
+## 🚀 Standalone Daily Life & Dev Tracker (`/tracker`)
 
-The Admin Panel includes modular interfaces designed to help writers plan, outline, write, and manage their novels:
+A private dashboard accessible only to authenticated users via `<ProtectedRoute>`, designed for daily productivity and habit accountability:
+
+### 1. 🔥 Interactive 365-Day Activity Heatmap
+* **GitHub-Style Contribution Grid**: Renders the past 365 days of activity with 5 intensity levels based on hours coded and tasks finished.
+* **Interactive Tooltips & Date Jumper**: Click any square to jump directly into that day's log with instant stats preview.
+
+### 2. 💻 Coding & Dev Progress
+* **Hours Coded**: Daily coding duration tracker with weekly average insights.
+* **Task Checklist**: Interactive checklist with strike-through completions and deletion.
+* **Learning Categories & Tags**: Quick tags for `#mern-stack`, `#genai`, `#dsa`, `#react`, `#nodejs`, `#express`, `#mongodb`, `#typescript`, `#system-design`, and custom tags.
+* **Reflections & Solutions**: Dedicated logs for key learnings and daily roadblocks/bugfixes.
+
+### 3. 📱 Phone Screen Time & App Breakdown
+* **Total Screen Time**: Logs hours and minutes with real-time digital wellness rating (*Optimal*, *Moderate*, *High*).
+* **App-Specific Tracker**: Dedicated tracking inputs for **📸 Instagram**, **💬 WhatsApp**, **🎮 BGMI**, and **👻 Snapchat** in minutes with automatic sum calculations.
+
+### 4. 🌙 Dual-Session Sleep Tracking (Night + Evening Nap)
+* **Primary Night Sleep**: Bedtime and Wake-up time inputs with auto duration computation.
+* **Evening / Afternoon Nap (2nd Sleep)**: Toggleable nap session inputs with auto-calculated duration.
+* **Total Daily Sleep**: Automatically aggregates night sleep and nap duration.
+* **Energy & Rest Rating**: Visual mood/rest level selectors (*⚡ Energized*, *😊 Good*, *😐 Moderate*, *🥱 Tired*, *💀 Exhausted*).
+
+### 5. 👟 Step Count & Activity
+* **Daily Steps Log**: Track walked steps with a custom daily target (default 10,000 steps).
+* **Progress Bar & Milestones**: Live animated progress bar with milestone statuses (*🚶‍♂️ Getting active*, *👟 Great Pace*, *🏆 Goal Reached*).
+
+### 6. ⚡ Habits & Custom Checklist
+* **Preset Consistency Checklist**: Quick toggles for *DSA / LeetCode*, *MERN Full-Stack*, *GenAI & LLMs*, *Workout / Gym*, *3L+ Water*, *Reading*, and *Clean Diet*.
+* **Interactive Custom Habit Items**: Create custom daily tasks on the fly with clickable completion states.
+* **Custom Key-Value Metrics**: Track arbitrary personal stats like Weight (*72kg*), Calories (*2100 kcal*), etc.
+
+### 7. 📱 Mobile PWA Installation
+* Configured with `vite-plugin-pwa` and `manifest.webmanifest`.
+* Can be installed directly onto Android, iOS, or Desktop as a native standalone application.
+
+---
+
+## 🛠️ Writer's Studio & Digital Library
 
 ### 🗂️ Books Library Dashboard (`BooksLibrary.tsx`)
 The entryway to the author's backend workspace.
@@ -189,6 +236,7 @@ Select     Ctrl+C/A/P/S    (@media print)      (?token=Firebase_JWT)
     ```json
     { "error": "Forbidden: Admin access required" }
     ```
+*   **Private Daily Tracker Security**: Cloud Firestore security rules strictly restrict access to the `daily_logs` collection to authenticated administrator requests only.
 
 ---
 
@@ -206,6 +254,8 @@ Writing flows require absolute reliability. The Writer's Studio utilizes an adva
 
 To showcase professional debugging, layout tuning, and security engineering, the following modifications have been implemented in the codebase:
 
+*   **📱 Progressive Web App (PWA) & Mobile Install Support**: Integrated `vite-plugin-pwa` with custom manifest icons, auto-updating service worker, and standalone mobile app installation.
+*   **📊 Standalone Daily Life & Dev Tracker**: Built independent `/tracker` page with interactive 365-day heatmap, dev hours & tasks, app screen time breakdown (Instagram, WhatsApp, BGMI, Snapchat), dual-sleep tracking (night + evening nap), step count goals with progress bars, and custom interactive checklists.
 *   **🛡️ Secure Manuscript Export APIs**: Added an authorization validation middleware (`checkAdminAuth`) to backend routes. Requests to HTML/PDF chapter and book downloads are blocked unless authorized with a valid Firebase ID Token (read from authorization headers, cookies, or query parameters).
 *   **📖 Proper Status Queries**: Updated database filtering from `done` to `published`, ensuring only chapters officially marked as published appear on the public reader feeds.
 *   **🚫 Public Reader Anti-Copy Blocks**: Added absolute `user-select: none` rules, intercepted context-menus (right-click blocks), and intercepted modifier shortcut keys (Ctrl+C, Ctrl+A, Ctrl+S, F12 inspector keys) on public reading pages, warning users with security toasts.
@@ -218,11 +268,12 @@ To showcase professional debugging, layout tuning, and security engineering, the
 
 ---
 
-## 🛠️ Technology Stack & APIs
+## 🛠️ Technology Stack & Dependencies
 
-*   **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons, AOS (Animate on Scroll).
-*   **Database**: Cloud Firestore (Hierarchical layout: `books` -> `chapters` nested collections).
-*   **Backend Functions**: Express routing hosted on Node.js Firebase Functions (`asia-south1`).
+*   **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Framer Motion, Lucide Icons, AOS (Animate on Scroll), `vite-plugin-pwa`.
+*   **Rich Text Engine**: Tiptap (`@tiptap/react`, `@tiptap/starter-kit`, custom ruler extensions).
+*   **Database & Storage**: Google Cloud Firestore & Firebase Cloud Storage.
+*   **Backend Microservices**: Node.js & Express hosted on serverless Firebase Cloud Functions (`asia-south1`).
 *   **Authentication**: Firebase Auth with JWT Claims Verification.
 
 ---
@@ -236,7 +287,7 @@ VITE_API_URL=https://your-backend-api-cloud-function.run.app
 ```
 
 ### Installation
-1. Install project dependencies:
+1. Install client dependencies:
    ```bash
    npm install
    ```
@@ -248,12 +299,19 @@ VITE_API_URL=https://your-backend-api-cloud-function.run.app
    ```
 
 ### Run Locally
-Launch the local Vite React server:
+Launch the local Vite React development server:
 ```bash
 npm run dev
 ```
 
 ### Deployment
 To push updates to production:
-*   **Backend APIs**: `firebase deploy --only functions`
-*   **Frontend SPA**: `npm run build && firebase deploy --only hosting`
+*   **Backend Microservices & Rules**:
+    ```bash
+    firebase deploy --only functions,firestore,storage
+    ```
+*   **Frontend Website & PWA**:
+    ```bash
+    npm run build
+    firebase deploy --only hosting
+    ```
