@@ -38,5 +38,10 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow update, delete: if isAdmin();
     }
+
+    // Daily Logs & Life Tracker: Admin Only (Private)
+    match /daily_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

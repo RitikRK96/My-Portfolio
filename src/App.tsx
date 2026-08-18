@@ -6,6 +6,7 @@ import { ProjectProvider } from "./context/ProjectContext";
 import { BlogProvider } from "./context/BlogContext";
 import { PhotoProvider } from "./context/PhotoContext";
 import { ContactProvider } from "./context/ContactContext";
+import { DailyTrackerProvider } from "./context/DailyTrackerContext";
 import AOS from "aos";
 import "aos/dist/aos.css";
 
@@ -30,6 +31,7 @@ const BooksLibrary = lazy(() => import("./pages/BooksLibrary"));
 const BookDetail = lazy(() => import("./pages/BookDetail"));
 const PublicBooks = lazy(() => import("./pages/PublicBooks"));
 const PublicBookDetail = lazy(() => import("./pages/PublicBookDetail"));
+const DailyTracker = lazy(() => import("./pages/DailyTracker"));
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -84,10 +86,11 @@ const App = () => {
       <BlogProvider>
         <PhotoProvider>
           <ContactProvider>
-            <div className="min-h-screen w-full flex flex-col overflow-x-hidden font-sans text-gray-100 selection:bg-orange-500 selection:text-white">
-              <div className="naruto-bg"></div>
-              <div className="grid-bg"></div>
-              <Navbar />
+            <DailyTrackerProvider>
+              <div className="min-h-screen w-full flex flex-col overflow-x-hidden font-sans text-gray-100 selection:bg-orange-500 selection:text-white">
+                <div className="naruto-bg"></div>
+                <div className="grid-bg"></div>
+                <Navbar />
               <main
                 className={`flex-1 flex flex-col ${location.pathname === "/" ? "pt-0" : location.pathname === "/admin/books" || location.pathname.startsWith("/admin/books/") || location.pathname === "/admin/book-writer" || location.pathname.startsWith("/books/") ? "pt-16" : "pt-20"}`}
               >
@@ -117,6 +120,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <AdminDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/tracker"
+                      element={
+                        <ProtectedRoute>
+                          <DailyTracker />
                         </ProtectedRoute>
                       }
                     />
@@ -161,6 +172,7 @@ const App = () => {
                 }}
               />
             </div>
+            </DailyTrackerProvider>
           </ContactProvider>
         </PhotoProvider>
       </BlogProvider>

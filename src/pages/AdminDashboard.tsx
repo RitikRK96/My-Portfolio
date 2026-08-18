@@ -1,9 +1,8 @@
-import { LayoutDashboard, FolderKanban, PenTool, Image, Mail, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, PenTool, Image, Mail, BookOpen, Flame } from 'lucide-react';
 import clsx from 'clsx';
 
 import { Link, useSearchParams } from 'react-router-dom';
 
-// We will import these later as we create them
 import AdminProjects from '../components/admin/AdminProjects';
 import AdminBlogs from '../components/admin/AdminBlogs';
 import AdminPhotos from '../components/admin/AdminPhotos';
@@ -58,7 +57,16 @@ const AdminDashboard = () => {
                             );
                         })}
 
-                        <div className="pt-4 mt-4 border-t border-white/10">
+                        <div className="pt-4 mt-4 border-t border-white/10 space-y-2">
+                            <Link
+                                to="/tracker"
+                                className="w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative cursor-pointer text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 border border-transparent"
+                            >
+                                <Flame size={22} className="flex-shrink-0" />
+                                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap tracking-wide">
+                                    Daily Tracker
+                                </span>
+                            </Link>
                             <Link
                                 to="/admin/books"
                                 className="w-full flex items-center justify-start gap-4 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 overflow-hidden relative cursor-pointer text-gray-400 hover:text-white hover:bg-white/5 border border-transparent"

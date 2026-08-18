@@ -30,6 +30,7 @@ const Navbar = () => {
     ];
 
     const adminLinks = [
+        { name: 'Tracker', path: '/tracker' },
         { name: 'Writer', path: '/admin/books' },
         { name: 'Dashboard', path: '/admin' },
     ];
